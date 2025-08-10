@@ -42,3 +42,6 @@ GoogleService-Info.plist
 # Build outputs
 /build
 /app/build
+
+# Kotlin compiler cache and logs
+.kotlin/
