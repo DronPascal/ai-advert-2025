@@ -22,9 +22,9 @@ class ChatViewModel : ViewModel() {
 
     private val fallbackApi = RetrofitClient.apiService
     private val openAIApi = RetrofitClient.openAIApi
-    
+
     // Проверяем, есть ли API ключ OpenAI
-    private val hasOpenAIKey = BuildConfig.OPENAI_API_KEY.isNotEmpty() && 
+    private val hasOpenAIKey = BuildConfig.OPENAI_API_KEY.isNotEmpty() &&
                               BuildConfig.OPENAI_API_KEY != "YOUR_OPENAI_API_KEY_HERE"
 
     // Predefined AI responses for demo
@@ -48,7 +48,7 @@ class ChatViewModel : ViewModel() {
         } else {
             "Привет! Я работаю в демо-режиме. Добавьте OpenAI API ключ в local.properties для полной функциональности!"
         }
-        
+
         _messages.value = listOf(
             ChatMessage(
                 text = welcomeText,
@@ -69,7 +69,7 @@ class ChatViewModel : ViewModel() {
     private fun getAIResponse(userMessage: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            
+
             try {
                 val aiResponse = if (hasOpenAIKey) {
                     // Используем OpenAI API
@@ -78,13 +78,13 @@ class ChatViewModel : ViewModel() {
                     // Используем демо-режим
                     getDemoResponse(userMessage)
                 }
-                
+
                 val aiMessage = ChatMessage(
                     text = aiResponse,
                     isFromUser = false
                 )
                 _messages.value = _messages.value + aiMessage
-                
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 handleApiError()
@@ -93,25 +93,25 @@ class ChatViewModel : ViewModel() {
             }
         }
     }
-    
+
     private suspend fun getOpenAIResponse(userMessage: String): String {
         try {
             // Создаем контекст разговора
             val conversationHistory = buildConversationHistory()
             val messages = conversationHistory + OpenAIMessage("user", userMessage)
-            
+
             val request = OpenAIChatRequest(
                 model = "gpt-3.5-turbo",
                 messages = messages,
                 max_tokens = 150,
                 temperature = 0.7
             )
-            
+
             val response = openAIApi.createChatCompletion(
                 authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
                 request = request
             )
-            
+
             if (response.isSuccessful && response.body()?.choices?.isNotEmpty() == true) {
                 return response.body()!!.choices.first().message.content
             } else {
@@ -121,16 +121,16 @@ class ChatViewModel : ViewModel() {
             return "Ошибка подключения к OpenAI: ${e.message}"
         }
     }
-    
+
     private suspend fun getDemoResponse(userMessage: String): String {
         // Simulate network delay
         delay(1000L + (500L..2000L).random())
-        
+
         // Try to get data from fallback API to demonstrate network connectivity
         return try {
             val randomId = (1..100).random()
             val response = fallbackApi.getPost(randomId)
-            
+
             if (response.isSuccessful) {
                 val post = response.body()
                 generateContextualResponse(userMessage, post?.title)
@@ -141,12 +141,12 @@ class ChatViewModel : ViewModel() {
             generateSimpleResponse(userMessage)
         }
     }
-    
+
     private fun buildConversationHistory(): List<OpenAIMessage> {
         // Берем последние 6 сообщений для контекста (3 пары вопрос-ответ)
         val recentMessages = _messages.value.takeLast(6)
         val openAIMessages = mutableListOf<OpenAIMessage>()
-        
+
         // Добавляем системное сообщение
         openAIMessages.add(
             OpenAIMessage(
@@ -154,7 +154,7 @@ class ChatViewModel : ViewModel() {
                 content = "Ты дружелюбный AI-ассистент. Отвечай на русском языке кратко и по существу."
             )
         )
-        
+
         // Конвертируем историю чата в формат OpenAI
         for (message in recentMessages) {
             if (message.isFromUser) {
@@ -163,7 +163,7 @@ class ChatViewModel : ViewModel() {
                 openAIMessages.add(OpenAIMessage("assistant", message.text))
             }
         }
-        
+
         return openAIMessages
     }
 
@@ -209,7 +209,7 @@ class ChatViewModel : ViewModel() {
         } else {
             "Извините, произошла ошибка при подключении к серверу. Но я всё равно готов с вами пообщаться!"
         }
-        
+
         val errorMessage = ChatMessage(
             text = errorText,
             isFromUser = false
