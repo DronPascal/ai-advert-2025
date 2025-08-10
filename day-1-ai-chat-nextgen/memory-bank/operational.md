@@ -97,9 +97,15 @@ if (BuildConfig.IS_DEBUG_BUILD) {
 ### Common Issues
 
 **Build Fails with KSP Errors**
-- Ensure Kotlin and KSP versions are compatible
+- Ensure ALL plugins declared in root build.gradle.kts (critical!)
+- Verify Kotlin and KSP versions match (e.g., 2.1.10 ↔ 2.1.10-1.0.30)
 - Clean build and retry
 - Check Hilt annotation processing
+
+**Hilt JavaPoet ClassName Error**
+- Root cause: Missing plugin declarations in root build.gradle.kts
+- Solution: Add `alias(libs.plugins.hilt) apply false` to root build file
+- Verify: Check build/generated/ksp/ for generated files
 
 **API Calls Failing**
 - Verify API key in `local.properties`

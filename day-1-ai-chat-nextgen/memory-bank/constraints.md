@@ -8,10 +8,11 @@
 - **Compile SDK**: 35
 
 ### Language and Framework
-- **Language**: Kotlin 2.0.20
+- **Language**: Kotlin 2.1.10 (matches Android Architecture Samples)
 - **UI Framework**: Jetpack Compose with Material 3
 - **Architecture**: Clean Architecture mandatory
 - **Dependency Injection**: Hilt only
+- **Annotation Processing**: KSP (not KAPT) for performance
 
 ### Performance Constraints
 - **App Size**: Target <50MB APK size
@@ -63,8 +64,9 @@
 
 ### Required Libraries
 - AndroidX Core, Lifecycle, Compose BOM
-- Hilt for dependency injection
-- Room for local database
+- Hilt 2.53.1 for dependency injection (verified compatibility with Kotlin 2.1.10)
+- KSP 2.1.10-1.0.30 for annotation processing (matches Kotlin version)
+- Room 2.6.1 for local database
 - Retrofit for networking
 - Kotlinx Serialization for JSON parsing
 
