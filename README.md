@@ -1,4 +1,4 @@
-# AIAdvert2025 - AI Chat Application
+# AIAdvert2025 - Day 1: AI Chat Application
 
 Android приложение с интеграцией OpenAI API для чата с AI-ассистентом.
 
@@ -46,16 +46,13 @@ openai_api_key=sk-proj-your-actual-key-here
 - **UI Layer**: Jetpack Compose
 - **Business Logic**: ViewModel + StateFlow  
 - **Network**: Retrofit + OkHttp
-- **API**: OpenAI GPT-3.5-turbo + JSONPlaceholder (fallback)
+- **API**: OpenAI GPT-3.5-turbo
 
 ## 📱 Использование
 
 1. Запустите приложение
 2. На главном экране нажмите "💬 Открыть AI Чат"
 3. Начните общение с AI-ассистентом
-4. AI автоматически определит режим работы:
-   - **С API ключом**: настоящий ChatGPT
-   - **Без ключа**: умные демо-ответы
 
 ## 🔒 Безопасность
 
