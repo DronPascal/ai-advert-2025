@@ -22,11 +22,12 @@ class ChatViewModel : ViewModel() {
     private val openAIApi = RetrofitClient.openAIApi
 
     init {
-        // Add welcome message from OpenAI
+        // Add welcome message (not from OpenAI, just UI greeting)
         _messages.value = listOf(
             ChatMessage(
                 text = "Привет! Я AI-ассистент ChatGPT. Как дела? О чём хотите поговорить?",
-                isFromUser = false
+                isFromUser = false,
+                isWelcomeMessage = true
             )
         )
     }
@@ -108,6 +109,7 @@ class ChatViewModel : ViewModel() {
 
     private fun buildConversationHistory(): List<OpenAIMessage> {
         // Берем последние 6 сообщений для контекста (3 пары вопрос-ответ)
+        // НО исключаем приветственное сообщение, так как оно не от OpenAI
         val recentMessages = _messages.value.takeLast(6)
         val openAIMessages = mutableListOf<OpenAIMessage>()
 
@@ -120,10 +122,12 @@ class ChatViewModel : ViewModel() {
         )
 
         // Конвертируем историю чата в формат OpenAI
+        // Исключаем приветственные сообщения (они не от OpenAI)
         for (message in recentMessages) {
             if (message.isFromUser) {
                 openAIMessages.add(OpenAIMessage("user", message.text))
-            } else {
+            } else if (!message.isWelcomeMessage) {
+                // Добавляем только реальные ответы от OpenAI
                 openAIMessages.add(OpenAIMessage("assistant", message.text))
             }
         }
