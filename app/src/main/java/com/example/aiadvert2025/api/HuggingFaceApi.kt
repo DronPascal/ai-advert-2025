@@ -43,14 +43,6 @@ data class OpenAIChatResponse(
     val system_fingerprint: String? = null
 )
 
-// JSONPlaceholder for fallback demo
-data class Post(
-    val userId: Int,
-    val id: Int,
-    val title: String,
-    val body: String
-)
-
 interface OpenAIApi {
     @Headers("Content-Type: application/json")
     @POST("v1/chat/completions")
@@ -58,9 +50,4 @@ interface OpenAIApi {
         @Header("Authorization") authorization: String,
         @Body request: OpenAIChatRequest
     ): Response<OpenAIChatResponse>
-}
-
-interface ApiService {
-    @GET("posts/{id}")
-    suspend fun getPost(@Path("id") id: Int): Response<Post>
 }
