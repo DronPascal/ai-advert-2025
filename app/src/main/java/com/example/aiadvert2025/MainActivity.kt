@@ -1,5 +1,6 @@
 package com.example.aiadvert2025
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,6 +21,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,6 +34,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,7 +46,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { AIAdvert2025Theme { GradientWelcomeScreen() } }
+        setContent {
+            AIAdvert2025Theme {
+                GradientWelcomeScreen()
+            }
+        }
     }
 }
 
@@ -87,6 +96,8 @@ private fun rememberBlobAnimation(
 
 @Composable
 fun GradientWelcomeScreen() {
+    val context = LocalContext.current
+
     // Создаем анимации
     val blob1X by rememberBlobAnimation(0f, 1f, 10000, "blob1X")
     val blob1Y by rememberBlobAnimation(1f, 0f, 12000, "blob1Y")
@@ -174,6 +185,29 @@ fun GradientWelcomeScreen() {
                 lineHeight = 28.sp,
                 modifier = Modifier.padding(horizontal = 48.dp)
             )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // Кнопка для открытия чата
+            Button(
+                onClick = {
+                    val intent = Intent(context, ChatActivity::class.java)
+                    context.startActivity(intent)
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF6366F1)
+                ),
+                modifier = Modifier
+                    .padding(horizontal = 32.dp)
+                    .height(56.dp)
+            ) {
+                Text(
+                    text = "💬 Открыть AI Чат",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
+                )
+            }
         }
     }
 }
