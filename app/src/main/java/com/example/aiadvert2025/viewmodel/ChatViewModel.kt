@@ -43,16 +43,16 @@ class ChatViewModel : ViewModel() {
     private fun getAIResponse(userMessage: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            
+
             try {
                 val aiResponse = getOpenAIResponse(userMessage)
-                
+
                 val aiMessage = ChatMessage(
                     text = aiResponse,
                     isFromUser = false
                 )
                 _messages.value = _messages.value + aiMessage
-                
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 handleApiError()
@@ -106,8 +106,6 @@ class ChatViewModel : ViewModel() {
         }
     }
 
-
-
     private fun buildConversationHistory(): List<OpenAIMessage> {
         // Берем последние 6 сообщений для контекста (3 пары вопрос-ответ)
         val recentMessages = _messages.value.takeLast(6)
@@ -132,7 +130,6 @@ class ChatViewModel : ViewModel() {
 
         return openAIMessages
     }
-
 
 
     private fun handleApiError() {
