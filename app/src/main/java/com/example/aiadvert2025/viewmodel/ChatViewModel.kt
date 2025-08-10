@@ -96,10 +96,16 @@ class ChatViewModel : ViewModel() {
 
     private suspend fun getOpenAIResponse(userMessage: String): String {
         try {
+            // Проверяем API ключ
+            val apiKey = BuildConfig.OPENAI_API_KEY
+            if (apiKey.isEmpty() || apiKey == "YOUR_OPENAI_API_KEY_HERE") {
+                return "API ключ не настроен корректно"
+            }
+            
             // Создаем контекст разговора
             val conversationHistory = buildConversationHistory()
             val messages = conversationHistory + OpenAIMessage("user", userMessage)
-
+            
             val request = OpenAIChatRequest(
                 model = "gpt-3.5-turbo",
                 messages = messages,
@@ -113,9 +119,19 @@ class ChatViewModel : ViewModel() {
             )
 
             if (response.isSuccessful && response.body()?.choices?.isNotEmpty() == true) {
-                return response.body()!!.choices.first().message.content
+                val choice = response.body()!!.choices.first()
+                val message = choice.message
+                
+                // Проверяем на отказ модели отвечать
+                if (message.refusal != null) {
+                    return "Модель отказалась отвечать: ${message.refusal}"
+                }
+                
+                return message.content.takeIf { it.isNotBlank() } 
+                    ?: "Получен пустой ответ от OpenAI"
             } else {
-                return "Извините, OpenAI API недоступен. Попробуйте позже."
+                val errorBody = response.errorBody()?.string()
+                return "OpenAI API ошибка ${response.code()}: $errorBody"
             }
         } catch (e: Exception) {
             return "Ошибка подключения к OpenAI: ${e.message}"
