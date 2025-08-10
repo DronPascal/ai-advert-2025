@@ -1,3 +1,15 @@
 <resources>
-    <string name="app_name">day1-ai-chat-nextgen</string>
+    <string name="app_name">AI Chat NextGen</string>
+    <string name="chat_title">AI Chat</string>
+    <string name="message_placeholder">Type your message...</string>
+    <string name="send_button_description">Send message</string>
+    <string name="ai_typing">AI is typing...</string>
+    <string name="error_network">Network connection error. Please check your internet connection.</string>
+    <string name="error_api_key_missing">OpenAI API key is not configured.</string>
+    <string name="error_api_key_invalid">OpenAI API key is invalid.</string>
+    <string name="error_rate_limit">Rate limit exceeded. Please try again later.</string>
+    <string name="error_insufficient_credits">Insufficient API credits.</string>
+    <string name="error_model_unavailable">The requested AI model is not available.</string>
+    <string name="error_content_filtered">Content was filtered by OpenAI\'s safety systems.</string>
+    <string name="error_unknown">An unknown error occurred. Please try again.</string>
 </resources>
