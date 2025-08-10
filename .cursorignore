@@ -1,0 +1,79 @@
+# Android build files
+build/
+app/build/
+.gradle/
+*.apk
+*.aab
+*.dex
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Gradle files
+.gradle/
+local.properties
+gradle-wrapper.jar
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.cache
+
+# Generated files
+generated/
+intermediates/
+outputs/
+
+# Native libraries
+*.so
+*.jniLibs/
+
+# Proguard
+proguard/
+
+# Large binary assets (если есть)
+*.mp4
+*.mov
+*.avi
+*.webm
+*.gif
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.svg
+
+# Documentation build
+docs/build/
+
+# Test reports
+reports/
+test-results/
+
+# Kotlin compiler cache
+.kotlin/
+
+# Android lint
+lint-results.xml
+lint-results.html
+
+# Firebase
+google-services.json
+GoogleService-Info.plist
+
+# Keystore files
+*.jks
+*.keystore
+
+# Large dependencies
+node_modules/
