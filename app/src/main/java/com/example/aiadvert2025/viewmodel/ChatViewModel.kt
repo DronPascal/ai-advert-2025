@@ -2,6 +2,9 @@ package com.example.aiadvert2025.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.aiadvert2025.BuildConfig
+import com.example.aiadvert2025.api.OpenAIChatRequest
+import com.example.aiadvert2025.api.OpenAIMessage
 import com.example.aiadvert2025.data.ChatMessage
 import com.example.aiadvert2025.network.RetrofitClient
 import kotlinx.coroutines.delay
@@ -17,7 +20,12 @@ class ChatViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val api = RetrofitClient.apiService
+    private val fallbackApi = RetrofitClient.apiService
+    private val openAIApi = RetrofitClient.openAIApi
+    
+    // Проверяем, есть ли API ключ OpenAI
+    private val hasOpenAIKey = BuildConfig.OPENAI_API_KEY.isNotEmpty() && 
+                              BuildConfig.OPENAI_API_KEY != "YOUR_OPENAI_API_KEY_HERE"
 
     // Predefined AI responses for demo
     private val aiResponses = listOf(
@@ -35,9 +43,15 @@ class ChatViewModel : ViewModel() {
 
     init {
         // Add welcome message
+        val welcomeText = if (hasOpenAIKey) {
+            "Привет! Я AI-ассистент на базе OpenAI. Как дела? О чём хотите поговорить?"
+        } else {
+            "Привет! Я работаю в демо-режиме. Добавьте OpenAI API ключ в local.properties для полной функциональности!"
+        }
+        
         _messages.value = listOf(
             ChatMessage(
-                text = "Привет! Я AI-ассистент. Как дела? О чём хотите поговорить?",
+                text = welcomeText,
                 isFromUser = false
             )
         )
@@ -55,30 +69,22 @@ class ChatViewModel : ViewModel() {
     private fun getAIResponse(userMessage: String) {
         viewModelScope.launch {
             _isLoading.value = true
-
+            
             try {
-                // Simulate network delay
-                delay(1000L + (500L..2000L).random())
-
-                // Try to get data from API to demonstrate network connectivity
-                val randomId = (1..100).random()
-                val response = api.getPost(randomId)
-
-                val aiResponse = if (response.isSuccessful) {
-                    // Use post title/body for more dynamic responses
-                    val post = response.body()
-                    generateContextualResponse(userMessage, post?.title)
+                val aiResponse = if (hasOpenAIKey) {
+                    // Используем OpenAI API
+                    getOpenAIResponse(userMessage)
                 } else {
-                    // Fallback to predefined responses
-                    generateSimpleResponse(userMessage)
+                    // Используем демо-режим
+                    getDemoResponse(userMessage)
                 }
-
+                
                 val aiMessage = ChatMessage(
                     text = aiResponse,
                     isFromUser = false
                 )
                 _messages.value = _messages.value + aiMessage
-
+                
             } catch (e: Exception) {
                 e.printStackTrace()
                 handleApiError()
@@ -86,6 +92,79 @@ class ChatViewModel : ViewModel() {
                 _isLoading.value = false
             }
         }
+    }
+    
+    private suspend fun getOpenAIResponse(userMessage: String): String {
+        try {
+            // Создаем контекст разговора
+            val conversationHistory = buildConversationHistory()
+            val messages = conversationHistory + OpenAIMessage("user", userMessage)
+            
+            val request = OpenAIChatRequest(
+                model = "gpt-3.5-turbo",
+                messages = messages,
+                max_tokens = 150,
+                temperature = 0.7
+            )
+            
+            val response = openAIApi.createChatCompletion(
+                authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
+                request = request
+            )
+            
+            if (response.isSuccessful && response.body()?.choices?.isNotEmpty() == true) {
+                return response.body()!!.choices.first().message.content
+            } else {
+                return "Извините, OpenAI API недоступен. Попробуйте позже."
+            }
+        } catch (e: Exception) {
+            return "Ошибка подключения к OpenAI: ${e.message}"
+        }
+    }
+    
+    private suspend fun getDemoResponse(userMessage: String): String {
+        // Simulate network delay
+        delay(1000L + (500L..2000L).random())
+        
+        // Try to get data from fallback API to demonstrate network connectivity
+        return try {
+            val randomId = (1..100).random()
+            val response = fallbackApi.getPost(randomId)
+            
+            if (response.isSuccessful) {
+                val post = response.body()
+                generateContextualResponse(userMessage, post?.title)
+            } else {
+                generateSimpleResponse(userMessage)
+            }
+        } catch (e: Exception) {
+            generateSimpleResponse(userMessage)
+        }
+    }
+    
+    private fun buildConversationHistory(): List<OpenAIMessage> {
+        // Берем последние 6 сообщений для контекста (3 пары вопрос-ответ)
+        val recentMessages = _messages.value.takeLast(6)
+        val openAIMessages = mutableListOf<OpenAIMessage>()
+        
+        // Добавляем системное сообщение
+        openAIMessages.add(
+            OpenAIMessage(
+                role = "system",
+                content = "Ты дружелюбный AI-ассистент. Отвечай на русском языке кратко и по существу."
+            )
+        )
+        
+        // Конвертируем историю чата в формат OpenAI
+        for (message in recentMessages) {
+            if (message.isFromUser) {
+                openAIMessages.add(OpenAIMessage("user", message.text))
+            } else {
+                openAIMessages.add(OpenAIMessage("assistant", message.text))
+            }
+        }
+        
+        return openAIMessages
     }
 
     private fun generateContextualResponse(userMessage: String, apiTitle: String?): String {
@@ -125,8 +204,14 @@ class ChatViewModel : ViewModel() {
     }
 
     private fun handleApiError() {
+        val errorText = if (hasOpenAIKey) {
+            "Извините, произошла ошибка при подключении к OpenAI. Попробуйте позже."
+        } else {
+            "Извините, произошла ошибка при подключении к серверу. Но я всё равно готов с вами пообщаться!"
+        }
+        
         val errorMessage = ChatMessage(
-            text = "Извините, произошла ошибка при подключении к серверу. Но я всё равно готов с вами пообщаться!",
+            text = errorText,
             isFromUser = false
         )
         _messages.value = _messages.value + errorMessage

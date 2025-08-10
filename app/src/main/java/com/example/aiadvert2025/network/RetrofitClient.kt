@@ -1,6 +1,7 @@
 package com.example.aiadvert2025.network
 
 import com.example.aiadvert2025.api.ApiService
+import com.example.aiadvert2025.api.OpenAIApi
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -8,7 +9,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    private const val BASE_URL = "https://jsonplaceholder.typicode.com/"
+    private const val JSONPLACEHOLDER_BASE_URL = "https://jsonplaceholder.typicode.com/"
+    private const val OPENAI_BASE_URL = "https://api.openai.com/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -21,11 +23,20 @@ object RetrofitClient {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+    // JSONPlaceholder для демо/fallback
+    private val jsonPlaceholderRetrofit = Retrofit.Builder()
+        .baseUrl(JSONPLACEHOLDER_BASE_URL)
         .client(okHttpClient)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    val apiService: ApiService = retrofit.create(ApiService::class.java)
+    // OpenAI API
+    private val openAIRetrofit = Retrofit.Builder()
+        .baseUrl(OPENAI_BASE_URL)
+        .client(okHttpClient)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    val apiService: ApiService = jsonPlaceholderRetrofit.create(ApiService::class.java)
+    val openAIApi: OpenAIApi = openAIRetrofit.create(OpenAIApi::class.java)
 }
