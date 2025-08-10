@@ -1,0 +1,69 @@
+# Workspace-wide Cursor ignore (safe for all modules)
+
+# --- Build outputs and caches ---
+**/build/
+.gradle/
+**/.gradle/
+.kotlin/
+.externalNativeBuild/
+.cxx/
+generated/
+intermediates/
+outputs/
+
+# --- IDE / tooling ---
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+captures/
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Gradle wrapper / local config ---
+local.properties
+gradle/wrapper/gradle-wrapper.jar
+gradle-wrapper.jar
+output.json
+
+# --- Binary artifacts ---
+*.apk
+*.aab
+*.dex
+*.so
+**/jniLibs/
+*.jar
+
+# --- Keystore / secrets ---
+*.jks
+*.keystore
+google-services.json
+GoogleService-Info.plist
+.env
+.env.*
+proguard/
+
+# --- Temporary files / logs ---
+*.tmp
+*.temp
+*.log
+*.cache
+*.hprof
+
+# --- Reports ---
+reports/
+test-results/
+lint-results.xml
+lint-results.html
+
+# --- Dependencies ---
+node_modules/
+
+# --- Documentation builds ---
+docs/build/
+
+
