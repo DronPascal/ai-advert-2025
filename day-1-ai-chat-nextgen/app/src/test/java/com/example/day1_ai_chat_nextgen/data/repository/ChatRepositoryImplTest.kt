@@ -84,7 +84,7 @@ class ChatRepositoryImplTest : BehaviorSpec({
                 )
             )
 
-            whenever(mockOpenAIApi.createChatCompletion(any(), any()))
+            whenever(mockOpenAIApi.createChatCompletion(any()))
                 .thenReturn(Response.success(openAIResponse))
 
             then("should save user message and return AI response") {
@@ -108,7 +108,7 @@ class ChatRepositoryImplTest : BehaviorSpec({
                 role = MessageRole.USER
             )
 
-            whenever(mockOpenAIApi.createChatCompletion(any(), any()))
+            whenever(mockOpenAIApi.createChatCompletion(any()))
                 .thenReturn(Response.error(401, mock()))
 
             then("should return API key invalid error") {
@@ -128,7 +128,7 @@ class ChatRepositoryImplTest : BehaviorSpec({
                 role = MessageRole.USER
             )
 
-            whenever(mockOpenAIApi.createChatCompletion(any(), any()))
+            whenever(mockOpenAIApi.createChatCompletion(any()))
                 .thenReturn(Response.error(429, mock()))
 
             then("should return rate limit error") {

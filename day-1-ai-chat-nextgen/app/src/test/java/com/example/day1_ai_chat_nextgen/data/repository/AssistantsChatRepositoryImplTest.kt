@@ -71,7 +71,7 @@ class AssistantsChatRepositoryImplTest : BehaviorSpec({
             )
 
             whenever(mockSharedPreferences.getString("assistant_id", null)).thenReturn(null)
-            whenever(mockAssistantsApi.createAssistant(any(), any()))
+            whenever(mockAssistantsApi.createAssistant(any()))
                 .thenReturn(Response.success(assistantDto))
 
             then("should create new assistant and save ID") {
@@ -99,7 +99,7 @@ class AssistantsChatRepositoryImplTest : BehaviorSpec({
             )
 
             whenever(mockSharedPreferences.getString("assistant_id", null)).thenReturn("asst_existing")
-            whenever(mockAssistantsApi.getAssistant(any(), eq("asst_existing")))
+            whenever(mockAssistantsApi.getAssistant("asst_existing"))
                 .thenReturn(Response.success(assistantDto))
 
             then("should return existing assistant ID") {
@@ -133,9 +133,9 @@ class AssistantsChatRepositoryImplTest : BehaviorSpec({
             )
 
             whenever(mockSharedPreferences.getString("assistant_id", null)).thenReturn("asst_12345")
-            whenever(mockAssistantsApi.getAssistant(any(), eq("asst_12345")))
+            whenever(mockAssistantsApi.getAssistant("asst_12345"))
                 .thenReturn(Response.success(assistantDto))
-            whenever(mockAssistantsApi.createThread(any(), any()))
+            whenever(mockAssistantsApi.createThread(any()))
                 .thenReturn(Response.success(threadDto))
 
             then("should create thread and save locally") {
@@ -224,13 +224,13 @@ class AssistantsChatRepositoryImplTest : BehaviorSpec({
             whenever(mockSharedPreferences.getString("assistant_id", null)).thenReturn("asst_12345")
             whenever(mockSharedPreferences.getString("current_thread_id", null)).thenReturn("local_thread_1")
             whenever(mockChatThreadDao.getThread("local_thread_1")).thenReturn(threadEntity)
-            whenever(mockAssistantsApi.createMessage(any(), eq("thread_12345"), any()))
+            whenever(mockAssistantsApi.createMessage(eq("thread_12345"), any()))
                 .thenReturn(Response.success(threadMessageDto))
-            whenever(mockAssistantsApi.createRun(any(), eq("thread_12345"), any()))
+            whenever(mockAssistantsApi.createRun(eq("thread_12345"), any()))
                 .thenReturn(Response.success(runDto))
-            whenever(mockAssistantsApi.getRun(any(), eq("thread_12345"), eq("run_12345")))
+            whenever(mockAssistantsApi.getRun("thread_12345", "run_12345"))
                 .thenReturn(Response.success(runDto))
-            whenever(mockAssistantsApi.getMessages(any(), eq("thread_12345"), any(), any(), anyOrNull(), anyOrNull()))
+            whenever(mockAssistantsApi.getMessages(eq("thread_12345"), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull()))
                 .thenReturn(Response.success(messagesResponse))
 
             then("should send message and return AI response") {
@@ -281,7 +281,7 @@ class AssistantsChatRepositoryImplTest : BehaviorSpec({
 
         `when`("API returns 401 unauthorized") {
             whenever(mockSharedPreferences.getString("assistant_id", null)).thenReturn(null)
-            whenever(mockAssistantsApi.createAssistant(any(), any()))
+            whenever(mockAssistantsApi.createAssistant(any()))
                 .thenReturn(Response.error(401, mock()))
 
             then("should return API key invalid error") {
@@ -296,7 +296,7 @@ class AssistantsChatRepositoryImplTest : BehaviorSpec({
 
         `when`("API returns 429 rate limit exceeded") {
             whenever(mockSharedPreferences.getString("assistant_id", null)).thenReturn(null)
-            whenever(mockAssistantsApi.createAssistant(any(), any()))
+            whenever(mockAssistantsApi.createAssistant(any()))
                 .thenReturn(Response.error(429, mock()))
 
             then("should return rate limit error") {
@@ -326,7 +326,7 @@ class AssistantsChatRepositoryImplTest : BehaviorSpec({
                 usage = null
             )
 
-            whenever(mockAssistantsApi.getRun(any(), any(), any()))
+            whenever(mockAssistantsApi.getRun(any(), any()))
                 .thenReturn(Response.success(failedRunDto))
 
             then("should handle run failure gracefully") {
