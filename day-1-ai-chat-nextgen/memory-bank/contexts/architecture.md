@@ -45,6 +45,7 @@ data/            # Data Access Layer
 - **Immutable State**: `ChatUiState` with `@Immutable` annotation
 - **Event-Driven**: `ChatUiEvent` sealed class for user actions
 - **Unidirectional Data Flow**: Events → ViewModel → State → UI
+- **Optimistic Updates**: Immediate UI feedback with background processing
 
 #### 4. Result Pattern
 - **Type-Safe Errors**: `Result<T>` sealed class with Success/Error/Loading
