@@ -33,6 +33,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.day1_ai_chat_nextgen.domain.model.ResponseFormat
 
+@Suppress("LongParameterList") // Compose components require many parameters for flexibility
 @Composable
 fun FormatSelectionDialog(
     availableFormats: List<ResponseFormat>,

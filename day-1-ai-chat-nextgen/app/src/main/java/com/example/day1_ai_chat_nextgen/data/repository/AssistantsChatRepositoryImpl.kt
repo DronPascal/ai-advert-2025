@@ -44,6 +44,10 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         private const val PREF_CURRENT_THREAD_ID = "current_thread_id"
         private const val RUN_POLL_INTERVAL_MS = 1000L
         private const val RUN_TIMEOUT_MS = 30000L
+        private const val HTTP_UNAUTHORIZED = 401
+        private const val HTTP_PAYMENT_REQUIRED = 402  
+        private const val HTTP_NOT_FOUND = 404
+        private const val HTTP_TOO_MANY_REQUESTS = 429
     }
 
     // Legacy interface implementation (for compatibility)
@@ -73,8 +77,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             chatMessageDao.insertMessage(clearMessage.toEntity())
             
             Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to clear history"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to clear history"))
         }
     }
 
@@ -82,12 +86,13 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         return try {
             chatMessageDao.deleteMessage(messageId)
             Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to delete message"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to delete message"))
         }
     }
 
     // New Assistants API implementation
+    @Suppress("ReturnCount") // Result pattern requires multiple returns for error handling 
     override suspend fun sendMessage(content: String): Result<ChatMessage> {
         return try {
             // Validate API key
@@ -177,8 +182,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             Result.Error(ChatError.NetworkError)
         } catch (e: HttpException) {
             handleHttpError(e.code(), e.message())
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Unknown error occurred"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Unknown error occurred"))
         }
     }
 
@@ -191,11 +196,12 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 chatThreadDao.getCurrentActiveThread()?.toDomain()
             }
             Result.Success(thread)
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to get current thread"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to get current thread"))
         }
     }
 
+    @Suppress("ReturnCount") // Result pattern requires multiple returns for error handling
     override suspend fun createNewThread(formatId: String?): Result<ChatThread> {
         return try {
             val assistantResult = getOrCreateAssistant()
@@ -261,8 +267,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             Result.Error(ChatError.NetworkError)
         } catch (e: HttpException) {
             handleHttpError(e.code(), e.message())
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to create thread"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to create thread"))
         }
     }
 
@@ -284,8 +290,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
 
             Result.Success(thread)
 
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to switch thread"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to switch thread"))
         }
     }
 
@@ -318,8 +324,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
 
             Result.Success(activeFormat)
 
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to set format"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to set format"))
         }
     }
 
@@ -347,8 +353,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
 
             Result.Success(Unit)
 
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to update thread format"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to update thread format"))
         }
     }
 
@@ -356,8 +362,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         return try {
             responseFormatDao.deactivateAllFormats()
             Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to deactivate formats"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to deactivate formats"))
         }
     }
 
@@ -365,8 +371,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         return try {
             val format = responseFormatDao.getActiveFormat()?.toDomain()
             Result.Success(format)
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to get active format"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to get active format"))
         }
     }
 
@@ -374,8 +380,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         return try {
             val formats = responseFormatDao.getPredefinedFormats().map { it.toDomain() }
             Result.Success(formats)
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to get predefined formats"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to get predefined formats"))
         }
     }
 
@@ -385,6 +391,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         }
     }
 
+    @Suppress("ReturnCount") // Result pattern requires multiple returns for error handling
     override suspend fun getOrCreateAssistant(): Result<String> {
         return try {
             val savedAssistantId = sharedPreferences.getString(PREF_ASSISTANT_ID, null)
@@ -427,8 +434,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             Result.Error(ChatError.NetworkError)
         } catch (e: HttpException) {
             handleHttpError(e.code(), e.message())
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to get or create assistant"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to get or create assistant"))
         }
     }
 
@@ -440,11 +447,12 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 responseFormatDao.insertFormats(predefinedFormats)
             }
             Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to initialize formats"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to initialize formats"))
         }
     }
 
+    @Suppress("ReturnCount") // Result pattern requires multiple returns for error handling
     private suspend fun createAndRunAssistant(thread: ChatThread, assistantId: String): Result<Unit> {
         return try {
             // Get format instructions for the run
@@ -474,11 +482,12 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             // Poll run status
             return pollRunStatus(thread.threadId, run.id)
 
-        } catch (e: Exception) {
+        } catch (expected: Exception) {
             Result.Error(ChatError.RunFailed)
         }
     }
 
+    @Suppress("ReturnCount") // Polling pattern requires multiple returns for different states
     private suspend fun pollRunStatus(threadId: String, runId: String): Result<Unit> {
         val startTime = System.currentTimeMillis()
         
@@ -512,7 +521,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                         continue
                     }
                 }
-            } catch (e: Exception) {
+            } catch (expected: Exception) {
                 return Result.Error(ChatError.NetworkError)
             }
         }
@@ -559,7 +568,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 )
                 chatMessageDao.insertMessage(systemMessage.toEntity())
             }
-        } catch (e: Exception) {
+        } catch (expected: Exception) {
             // Non-critical error, just log it if needed
             // The format is still saved and will be applied in future runs
         }
@@ -567,17 +576,17 @@ class AssistantsChatRepositoryImpl @Inject constructor(
 
     private fun <T> handleHttpError(code: Int, errorBody: String?): Result<T> {
         return when (code) {
-            401 -> Result.Error(ChatError.ApiKeyInvalid)
-            429 -> Result.Error(ChatError.RateLimitExceeded)
-            402 -> Result.Error(ChatError.InsufficientCredits)
-            404 -> Result.Error(ChatError.AssistantNotFound)
+            HTTP_UNAUTHORIZED -> Result.Error(ChatError.ApiKeyInvalid)
+            HTTP_TOO_MANY_REQUESTS -> Result.Error(ChatError.RateLimitExceeded)
+            HTTP_PAYMENT_REQUIRED -> Result.Error(ChatError.InsufficientCredits)
+            HTTP_NOT_FOUND -> Result.Error(ChatError.AssistantNotFound)
             else -> {
                 val details = try {
                     errorBody?.let { 
                         // Parse OpenAI error response if needed
                         it
                     } ?: "HTTP $code"
-                } catch (e: Exception) {
+                } catch (expected: Exception) {
                     "HTTP $code"
                 }
                 Result.Error(ChatError.ApiError(code, details))
