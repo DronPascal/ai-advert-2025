@@ -459,12 +459,16 @@ class AssistantsChatViewModel @Inject constructor(
         _uiState.update { it.copy(isCreatingThread = true) }
         
         viewModelScope.launch {
-            val activeFormat = _uiState.value.activeFormat
-            when (val result = chatRepository.createNewThread(activeFormat?.id)) {
+            // Create new thread without format to reset format state
+            when (val result = chatRepository.createNewThread(formatId = null)) {
                 is Result.Success -> {
+                    // Reset active format when creating new thread
+                    resetActiveFormat()
+                    
                     _uiState.update { 
                         it.copy(
                             currentThread = result.data,
+                            activeFormat = null,
                             isCreatingThread = false,
                             showThreadDialog = false,
                             needsFormatSelection = false
@@ -573,6 +577,17 @@ class AssistantsChatViewModel @Inject constructor(
                 is Result.Loading -> {
                     // Continue waiting
                 }
+            }
+        }
+    }
+
+    private fun resetActiveFormat() {
+        viewModelScope.launch {
+            try {
+                // Deactivate all formats in database
+                chatRepository.deactivateAllFormats()
+            } catch (e: Exception) {
+                // Non-critical error, format reset is mainly for UI
             }
         }
     }

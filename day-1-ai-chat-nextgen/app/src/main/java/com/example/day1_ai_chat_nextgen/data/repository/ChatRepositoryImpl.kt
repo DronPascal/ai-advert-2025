@@ -192,6 +192,10 @@ class LegacyChatRepositoryImpl @Inject constructor(
         return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
     }
 
+    override suspend fun deactivateAllFormats(): Result<Unit> {
+        return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
+    }
+
     override suspend fun getActiveFormat(): Result<ResponseFormat?> {
         return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
     }

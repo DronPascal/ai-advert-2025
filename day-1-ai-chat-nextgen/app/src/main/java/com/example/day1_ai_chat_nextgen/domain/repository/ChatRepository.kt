@@ -24,6 +24,7 @@ interface ChatRepository {
     suspend fun setResponseFormat(formatInstructions: String): Result<ResponseFormat>
     suspend fun setResponseFormat(format: ResponseFormat): Result<ResponseFormat>
     suspend fun updateCurrentThreadFormat(format: ResponseFormat): Result<Unit>
+    suspend fun deactivateAllFormats(): Result<Unit>
     suspend fun getActiveFormat(): Result<ResponseFormat?>
     suspend fun getPredefinedFormats(): Result<List<ResponseFormat>>
     fun getAllFormats(): Flow<List<ResponseFormat>>

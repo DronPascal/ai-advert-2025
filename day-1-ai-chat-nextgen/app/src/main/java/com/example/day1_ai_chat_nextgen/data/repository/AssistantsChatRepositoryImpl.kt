@@ -350,6 +350,15 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deactivateAllFormats(): Result<Unit> {
+        return try {
+            responseFormatDao.deactivateAllFormats()
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(ChatError.UnknownError(e.message ?: "Failed to deactivate formats"))
+        }
+    }
+
     override suspend fun getActiveFormat(): Result<ResponseFormat?> {
         return try {
             val format = responseFormatDao.getActiveFormat()?.toDomain()
