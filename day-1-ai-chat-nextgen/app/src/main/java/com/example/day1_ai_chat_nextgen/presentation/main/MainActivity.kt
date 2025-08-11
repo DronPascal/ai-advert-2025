@@ -9,7 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.example.day1_ai_chat_nextgen.presentation.chat.ChatScreen
+import com.example.day1_ai_chat_nextgen.presentation.chat.AssistantsChatScreen
 import com.example.day1_ai_chat_nextgen.presentation.theme.Day1AiChatNextgenTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ChatScreen()
+                    AssistantsChatScreen()
                 }
             }
         }

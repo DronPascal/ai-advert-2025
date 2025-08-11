@@ -3,6 +3,7 @@ package com.example.day1_ai_chat_nextgen.presentation.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.day1_ai_chat_nextgen.domain.model.Result
+import com.example.day1_ai_chat_nextgen.domain.repository.ChatRepository
 import com.example.day1_ai_chat_nextgen.domain.usecase.GetMessagesUseCase
 import com.example.day1_ai_chat_nextgen.domain.usecase.SendMessageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,7 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val getMessagesUseCase: GetMessagesUseCase,
-    private val sendMessageUseCase: SendMessageUseCase
+    private val sendMessageUseCase: SendMessageUseCase,
+    private val chatRepository: ChatRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -72,6 +74,19 @@ class ChatViewModel @Inject constructor(
             ChatUiEvent.DismissError -> {
                 _uiState.update { it.copy(error = null) }
             }
+            
+            // Stub implementations for new events (legacy compatibility)
+            ChatUiEvent.ShowFormatDialog -> { /* Not implemented */ }
+            ChatUiEvent.HideFormatDialog -> { /* Not implemented */ }
+            is ChatUiEvent.FormatInputChanged -> { /* Not implemented */ }
+            is ChatUiEvent.SetCustomFormat -> { /* Not implemented */ }
+            is ChatUiEvent.SelectPredefinedFormat -> { /* Not implemented */ }
+            ChatUiEvent.ShowThreadDialog -> { /* Not implemented */ }
+            ChatUiEvent.HideThreadDialog -> { /* Not implemented */ }
+            ChatUiEvent.CreateNewThread -> { /* Not implemented */ }
+            is ChatUiEvent.SwitchToThread -> { /* Not implemented */ }
+            ChatUiEvent.InitializeApp -> { /* Not implemented */ }
+            ChatUiEvent.SkipFormatSelection -> { /* Not implemented */ }
         }
     }
 

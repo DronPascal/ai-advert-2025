@@ -20,3 +20,4 @@ Status legend: [ ] Planned, [~] In progress, [x] Done
 - Items originate from the module README’s “Possible improvements” section, adapted to be actionable and secure-by-default.
 
 
+

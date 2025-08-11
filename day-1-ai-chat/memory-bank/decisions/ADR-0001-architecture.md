@@ -22,3 +22,4 @@ The module is a simple AI chat Android application. It currently uses Jetpack Co
 - Reduced complexity and maintenance cost.
 
 
+
