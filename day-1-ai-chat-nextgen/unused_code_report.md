@@ -1,6 +1,6 @@
 # Анализ неиспользуемого кода
 
-Найдено потенциально неиспользуемых элементов: **8**
+Найдено потенциально неиспользуемых элементов: **4**
 
 ## Classes (2 элементов)
 
@@ -20,23 +20,7 @@
   - Файл: `app/src/main/java/com/example/day1_ai_chat_nextgen/domain/model/Result.kt`
   - Использований: 0
 
-## Properties (5 элементов)
-
-- **OnSurfaceMedium**
-  - Файл: `app/src/main/java/com/example/day1_ai_chat_nextgen/presentation/theme/Color.kt`
-  - Использований: 0
-
-- **Purple80**
-  - Файл: `app/src/main/java/com/example/day1_ai_chat_nextgen/presentation/theme/Color.kt`
-  - Использований: 0
-
-- **isError**
-  - Файл: `app/src/main/java/com/example/day1_ai_chat_nextgen/domain/model/Result.kt`
-  - Использований: 0
-
-- **isSuccess**
-  - Файл: `app/src/main/java/com/example/day1_ai_chat_nextgen/domain/model/Result.kt`
-  - Использований: 0
+## Properties (1 элементов)
 
 - **messageRole**
   - Файл: `app/src/main/java/com/example/day1_ai_chat_nextgen/data/mapper/AssistantsMapper.kt`
