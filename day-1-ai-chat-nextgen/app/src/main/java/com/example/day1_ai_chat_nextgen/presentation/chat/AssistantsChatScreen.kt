@@ -307,7 +307,8 @@ private fun ChatContent(
             value = uiState.messageInput,
             onValueChange = { onEvent(ChatUiEvent.MessageInputChanged(it)) },
             onSendClick = { onEvent(ChatUiEvent.SendMessage) },
-            enabled = uiState.canSendMessage,
+            enabled = uiState.canTypeMessage,
+            canSend = uiState.canSendMessage,
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
