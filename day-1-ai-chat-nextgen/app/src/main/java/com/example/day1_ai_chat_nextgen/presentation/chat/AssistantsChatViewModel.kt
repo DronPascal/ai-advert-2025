@@ -348,21 +348,49 @@ class AssistantsChatViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
-            when (val result = chatRepository.setResponseFormat(instructions)) {
-                is Result.Success -> {
-                    // Create new thread with this format
-                    createNewThreadWithFormat(result.data.id)
-                }
-                is Result.Error -> {
-                    _uiState.update { 
-                        it.copy(
-                            error = "Failed to set format: ${result.exception.message}",
-                            isSettingFormat = false
-                        )
+            val currentState = _uiState.value
+            val customFormat = com.example.day1_ai_chat_nextgen.domain.model.ResponseFormat.createCustomFormat(instructions)
+            
+            if (currentState.currentThread != null) {
+                // Update format in existing thread
+                when (val result = chatRepository.updateCurrentThreadFormat(customFormat)) {
+                    is Result.Success -> {
+                        _uiState.update { 
+                            it.copy(
+                                activeFormat = customFormat,
+                                isSettingFormat = false
+                            )
+                        }
+                    }
+                    is Result.Error -> {
+                        _uiState.update { 
+                            it.copy(
+                                error = "Failed to update format: ${result.exception.message}",
+                                isSettingFormat = false
+                            )
+                        }
+                    }
+                    is Result.Loading -> {
+                        // Continue waiting
                     }
                 }
-                is Result.Loading -> {
-                    // Continue waiting
+            } else {
+                // No current thread, create new one with format
+                when (val result = chatRepository.setResponseFormat(instructions)) {
+                    is Result.Success -> {
+                        createNewThreadWithFormat(result.data.id)
+                    }
+                    is Result.Error -> {
+                        _uiState.update { 
+                            it.copy(
+                                error = "Failed to set format: ${result.exception.message}",
+                                isSettingFormat = false
+                            )
+                        }
+                    }
+                    is Result.Loading -> {
+                        // Continue waiting
+                    }
                 }
             }
         }
@@ -380,21 +408,48 @@ class AssistantsChatViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
-            when (val result = chatRepository.setResponseFormat(format)) {
-                is Result.Success -> {
-                    // Create new thread with this format
-                    createNewThreadWithFormat(result.data.id)
-                }
-                is Result.Error -> {
-                    _uiState.update { 
-                        it.copy(
-                            error = "Failed to set format: ${result.exception.message}",
-                            isSettingFormat = false
-                        )
+            val currentState = _uiState.value
+            
+            if (currentState.currentThread != null) {
+                // Update format in existing thread
+                when (val result = chatRepository.updateCurrentThreadFormat(format)) {
+                    is Result.Success -> {
+                        _uiState.update { 
+                            it.copy(
+                                activeFormat = format,
+                                isSettingFormat = false
+                            )
+                        }
+                    }
+                    is Result.Error -> {
+                        _uiState.update { 
+                            it.copy(
+                                error = "Failed to update format: ${result.exception.message}",
+                                isSettingFormat = false
+                            )
+                        }
+                    }
+                    is Result.Loading -> {
+                        // Continue waiting
                     }
                 }
-                is Result.Loading -> {
-                    // Continue waiting
+            } else {
+                // No current thread, create new one with format
+                when (val result = chatRepository.setResponseFormat(format)) {
+                    is Result.Success -> {
+                        createNewThreadWithFormat(result.data.id)
+                    }
+                    is Result.Error -> {
+                        _uiState.update { 
+                            it.copy(
+                                error = "Failed to set format: ${result.exception.message}",
+                                isSettingFormat = false
+                            )
+                        }
+                    }
+                    is Result.Loading -> {
+                        // Continue waiting
+                    }
                 }
             }
         }

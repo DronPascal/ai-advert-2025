@@ -302,6 +302,35 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateCurrentThreadFormat(format: ResponseFormat): Result<Unit> {
+        return try {
+            val currentThreadResult = getCurrentThread()
+            if (currentThreadResult !is Result.Success || currentThreadResult.data == null) {
+                return Result.Error(ChatError.ThreadNotFound)
+            }
+
+            val currentThread = currentThreadResult.data
+
+            // Deactivate all formats
+            responseFormatDao.deactivateAllFormats()
+
+            // Save and activate new format
+            val activeFormat = format.copy(isActive = true)
+            responseFormatDao.insertFormat(activeFormat.toEntity())
+
+            // Update current thread's format
+            chatThreadDao.updateThreadFormat(currentThread.id, activeFormat.id)
+
+            // Send format instruction message to the thread
+            sendFormatInstructionMessage(currentThread, activeFormat)
+
+            Result.Success(Unit)
+
+        } catch (e: Exception) {
+            Result.Error(ChatError.UnknownError(e.message ?: "Failed to update thread format"))
+        }
+    }
+
     override suspend fun getActiveFormat(): Result<ResponseFormat?> {
         return try {
             val format = responseFormatDao.getActiveFormat()?.toDomain()
@@ -468,6 +497,43 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         // Could send a system message with the format instructions
         // For now, we store the format in the database and apply it in runs
         responseFormatDao.setFormatActive(format.id)
+    }
+
+    private suspend fun sendFormatInstructionMessage(thread: ChatThread, format: ResponseFormat) {
+        try {
+            val formatMessage = """
+                🔄 НОВЫЙ ФОРМАТ ОТВЕТОВ УСТАНОВЛЕН:
+                
+                ${format.name}
+                
+                ${format.instructions}
+                
+                Пожалуйста, используй этот формат для всех последующих ответов в данном треде.
+            """.trimIndent()
+
+            // Send format instruction message to the thread
+            val messageResponse = assistantsApi.createMessage(
+                threadId = thread.threadId,
+                request = CreateMessageRequestDto(
+                    role = "user",
+                    content = formatMessage
+                )
+            )
+
+            if (messageResponse.isSuccessful) {
+                // Save the format instruction message locally as a system message
+                val systemMessage = ChatMessage(
+                    id = UUID.randomUUID().toString(),
+                    content = "Формат ответов обновлен: ${format.name}",
+                    role = MessageRole.USER, // We use USER role since OpenAI API doesn't support system role for threads
+                    timestamp = System.currentTimeMillis()
+                )
+                chatMessageDao.insertMessage(systemMessage.toEntity())
+            }
+        } catch (e: Exception) {
+            // Non-critical error, just log it if needed
+            // The format is still saved and will be applied in future runs
+        }
     }
 
     private fun <T> handleHttpError(code: Int, errorBody: String?): Result<T> {
