@@ -16,6 +16,9 @@
 # Run tests
 ./gradlew test
 
+# Run static analysis
+./gradlew detekt
+
 # Run with specific API key
 # Create or edit local.properties file
 echo "openai_api_key=your_actual_api_key_here" >> local.properties
@@ -37,6 +40,8 @@ echo "openai_api_key=your_actual_api_key_here" >> local.properties
 - [ ] API key removed from debug builds
 - [ ] ProGuard enabled and tested
 - [ ] All tests passing
+- [ ] **Detekt analysis passes: `./gradlew detekt`**
+- [ ] **No unused code detected**
 - [ ] APK size under 50MB
 - [ ] No sensitive data in logs
 
@@ -95,6 +100,12 @@ if (BuildConfig.IS_DEBUG_BUILD) {
 ## Troubleshooting
 
 ### Common Issues
+
+**Detekt Configuration Conflicts**
+- Duplicate rule definitions cause YAML parsing errors
+- Use @file:Suppress for file-level suppressions (e.g., MatchingDeclarationName)
+- Configure reasonable limits for Android/Compose patterns
+- Use `expected: Exception` instead of generic Exception catching
 
 **Build Fails with KSP Errors**
 - Ensure ALL plugins declared in root build.gradle.kts (critical!)
