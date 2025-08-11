@@ -30,7 +30,7 @@ class ChatRepositoryImplTest : BehaviorSpec({
         val mockChatMessageDao = mock<ChatMessageDao>()
         val json = Json { ignoreUnknownKeys = true }
         
-        val repository = ChatRepositoryImpl(mockOpenAIApi, mockChatMessageDao, json)
+        val repository = LegacyChatRepositoryImpl(mockOpenAIApi, mockChatMessageDao, json)
 
         `when`("getting messages") {
             val entities = listOf(
