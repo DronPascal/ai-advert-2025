@@ -19,9 +19,9 @@ We will migrate from the Chat Completions API to the OpenAI Assistants API to en
 ### Architecture Changes
 
 #### API Layer
-- **New API Interface**: `OpenAIAssistantsApi` with comprehensive endpoint coverage
-- **Enhanced DTOs**: Complete set of data transfer objects for all Assistants API entities
-- **Backward Compatibility**: Legacy `OpenAIApi` maintained for transition period
+- **API Interface**: `OpenAIAssistantsApi` with comprehensive endpoint coverage
+- **DTOs**: Complete set of data transfer objects for all Assistants API entities
+- **Cleanup**: Legacy `OpenAIApi` and Chat Completions fallback removed
 
 #### Domain Layer
 - **New Models**: `ChatThread`, `ResponseFormat` with rich behavior
