@@ -3,9 +3,12 @@
 ## 🔧 Technical Debt & Infrastructure
 
 ### High Priority
+- [x] **Assistants API Migration** - Complete migration to OpenAI Assistants API with format persistence ✅
+- [x] **Enhanced Error Handling** - Comprehensive error handling for Assistants API scenarios ✅
+- [x] **Database Schema Update** - Room v2 with threads and formats support ✅
 - [ ] **API Key Security Enhancement** - Replace BuildConfig with encrypted storage for production
-- [ ] **Error Handling Improvements** - Add retry mechanisms for network failures
-- [ ] **Database Migrations** - Implement proper Room migration strategy
+- [ ] **Legacy Code Cleanup** - Remove Chat Completions implementation after migration validation
+- [ ] **Performance Optimization** - Optimize Assistants API polling and caching strategies
 - [ ] **ProGuard Optimization** - Fine-tune obfuscation rules for better app size
 
 ### Medium Priority
@@ -22,6 +25,10 @@
 ## 🚀 Feature Enhancements
 
 ### Core Features
+- [x] **Custom Response Formats** - User-defined and predefined format templates ✅
+- [x] **Thread Management** - Multiple conversation threads with switching ✅
+- [x] **Format Persistence** - Formats maintained across app sessions ✅
+- [x] **Session Restoration** - Seamless continuation after app restart ✅
 - [ ] **Message Search** - Search through chat history
 - [ ] **Message Categories** - Tag and organize conversations
 - [ ] **Conversation Templates** - Pre-defined conversation starters
