@@ -325,8 +325,6 @@ style:
   active: true
   CollapsibleIfStatements:
     active: false
-  MaxLineLength:
-    active: false  # Disabled for readability in long parameter lists and test methods
   EqualsNullCall:
     active: true
   EqualsOnSignatureLine:
@@ -375,11 +373,7 @@ style:
     ignoreRanges: false
     ignoreExtensionFunctions: true
   MaxLineLength:
-    active: true
-    maxLineLength: 120
-    excludePackageStatements: true
-    excludeImportStatements: true
-    excludeCommentStatements: false
+    active: false  # Disabled for readability in long parameter lists and test methods
   MayBeConst:
     active: true
   ModifierOrder:
