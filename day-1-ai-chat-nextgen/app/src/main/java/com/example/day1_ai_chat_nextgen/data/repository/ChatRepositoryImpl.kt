@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName") // File named for interface, not implementation class
+
 package com.example.day1_ai_chat_nextgen.data.repository
 
 import com.example.day1_ai_chat_nextgen.BuildConfig
@@ -26,7 +28,7 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
-@Suppress("MatchingDeclarationName", "ReturnCount") // File named for interface, Result pattern needs multiple returns
+@Suppress("ReturnCount") // Result pattern needs multiple returns
 @Singleton
 class LegacyChatRepositoryImpl @Inject constructor(
     private val openAIApi: OpenAIApi,
