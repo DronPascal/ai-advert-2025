@@ -16,3 +16,4 @@ Future additions:
 - MVI-style reducers in `ChatViewModel` if state/events grow.
 
 
+

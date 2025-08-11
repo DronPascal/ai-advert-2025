@@ -24,3 +24,4 @@ Purpose: A compact, human-maintainable knowledge base to keep decisions, scope, 
 4. Expand `contexts/` as the system evolves.
 
 
+

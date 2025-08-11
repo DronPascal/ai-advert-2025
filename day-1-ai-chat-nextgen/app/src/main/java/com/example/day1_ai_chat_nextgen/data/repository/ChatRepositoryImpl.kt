@@ -11,10 +11,13 @@ import com.example.day1_ai_chat_nextgen.data.remote.dto.OpenAIErrorResponseDto
 import com.example.day1_ai_chat_nextgen.data.remote.dto.OpenAIMessageDto
 import com.example.day1_ai_chat_nextgen.domain.model.ChatError
 import com.example.day1_ai_chat_nextgen.domain.model.ChatMessage
+import com.example.day1_ai_chat_nextgen.domain.model.ChatThread
 import com.example.day1_ai_chat_nextgen.domain.model.MessageRole
+import com.example.day1_ai_chat_nextgen.domain.model.ResponseFormat
 import com.example.day1_ai_chat_nextgen.domain.model.Result
 import com.example.day1_ai_chat_nextgen.domain.repository.ChatRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
@@ -24,7 +27,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class ChatRepositoryImpl @Inject constructor(
+class LegacyChatRepositoryImpl @Inject constructor(
     private val openAIApi: OpenAIApi,
     private val chatMessageDao: ChatMessageDao,
     private val json: Json
@@ -154,5 +157,54 @@ class ChatRepositoryImpl @Inject constructor(
                 Result.Error(ChatError.ApiError(code, errorMessage))
             }
         }
+    }
+
+    // Stub implementations for new interface methods (will be replaced by AssistantsChatRepositoryImpl)
+    override suspend fun sendMessage(content: String): Result<ChatMessage> {
+        return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
+    }
+
+    override suspend fun getCurrentThread(): Result<ChatThread?> {
+        return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
+    }
+
+    override suspend fun createNewThread(formatId: String?): Result<ChatThread> {
+        return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
+    }
+
+    override suspend fun switchToThread(threadId: String): Result<ChatThread> {
+        return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
+    }
+
+    override fun getAllThreads(): Flow<List<ChatThread>> {
+        return flowOf(emptyList())
+    }
+
+    override suspend fun setResponseFormat(formatInstructions: String): Result<ResponseFormat> {
+        return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
+    }
+
+    override suspend fun setResponseFormat(format: ResponseFormat): Result<ResponseFormat> {
+        return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
+    }
+
+    override suspend fun getActiveFormat(): Result<ResponseFormat?> {
+        return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
+    }
+
+    override suspend fun getPredefinedFormats(): Result<List<ResponseFormat>> {
+        return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
+    }
+
+    override fun getAllFormats(): Flow<List<ResponseFormat>> {
+        return flowOf(emptyList())
+    }
+
+    override suspend fun getOrCreateAssistant(): Result<String> {
+        return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
+    }
+
+    override suspend fun initializePredefinedFormats(): Result<Unit> {
+        return Result.Error(ChatError.UnknownError("Use AssistantsChatRepositoryImpl instead"))
     }
 }

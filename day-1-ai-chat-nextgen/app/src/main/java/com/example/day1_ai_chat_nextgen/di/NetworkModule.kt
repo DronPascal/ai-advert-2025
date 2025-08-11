@@ -2,6 +2,7 @@ package com.example.day1_ai_chat_nextgen.di
 
 import com.example.day1_ai_chat_nextgen.BuildConfig
 import com.example.day1_ai_chat_nextgen.data.remote.api.OpenAIApi
+import com.example.day1_ai_chat_nextgen.data.remote.api.OpenAIAssistantsApi
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
@@ -65,5 +66,11 @@ object NetworkModule {
     @Singleton
     fun provideOpenAIApi(retrofit: Retrofit): OpenAIApi {
         return retrofit.create(OpenAIApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOpenAIAssistantsApi(retrofit: Retrofit): OpenAIAssistantsApi {
+        return retrofit.create(OpenAIAssistantsApi::class.java)
     }
 }
