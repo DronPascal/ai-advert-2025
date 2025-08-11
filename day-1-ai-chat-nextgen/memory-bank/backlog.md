@@ -19,7 +19,7 @@
 - [x] **Code Quality Standards** - Established production-grade quality gates ✅
 - [ ] **Format UI Consistency** - Fix format indicator visibility across different states (ACTIVE: Format indicator sometimes disappears when clicking "New Thread")
 - [ ] **API Key Security Enhancement** - Replace BuildConfig with encrypted storage for production
-- [ ] **Legacy Code Cleanup** - Remove Chat Completions implementation after migration validation
+ - [x] **Legacy Code Cleanup** - Remove Chat Completions implementation after migration validation
 - [ ] **ProGuard Optimization** - Fine-tune obfuscation rules for better app size
 
 ### Medium Priority

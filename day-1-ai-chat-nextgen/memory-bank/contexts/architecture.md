@@ -6,7 +6,7 @@
 ```
 presentation/     # UI Layer - Compose, ViewModels, States
 ├── main/        # MainActivity and navigation
-├── chat/        # Chat screen and related UI (legacy + assistants)
+├── chat/        # Chat screen and related UI (Assistants)
 ├── components/  # Reusable UI components (format dialogs, indicators)
 └── theme/       # Material 3 theming
 
@@ -24,7 +24,7 @@ data/            # Data Access Layer
 │   ├── api/     # API interfaces (OpenAIAssistantsApi)
 │   └── dto/     # Data transfer objects (Assistants DTOs)
 ├── mapper/      # Data transformation (enhanced with threads/formats)
-└── repository/  # Repository implementations (legacy + assistants)
+└── repository/  # Repository implementations (Assistants only)
 ```
 
 ### Key Architectural Patterns

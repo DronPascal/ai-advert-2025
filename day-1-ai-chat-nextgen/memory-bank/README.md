@@ -13,6 +13,11 @@ This memory bank contains project context, architectural decisions, and constrai
 - `operational.md` - Deployment, monitoring, and operational concerns
 
 ## Recent Updates
+ 
+### 11 August 2025 Legacy Cleanup - Assistants-Only Implementation
+- Removed legacy Chat Completions fallback and UI
+- Updated DI, mappers, and manifest accordingly
+- Documentation aligned to Assistants-only architecture
 
 ### 11 August 2025 Major Achievements - Code Quality & Architecture Excellence
 

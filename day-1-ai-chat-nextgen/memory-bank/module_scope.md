@@ -16,7 +16,7 @@
 
 ### Technical Boundaries
 - **UI Layer**: Jetpack Compose with Material 3 design system
-- **Business Logic**: Domain layer with use cases and repository pattern
+ - **Business Logic**: Domain models and repository interface; no use case layer in current implementation
 - **Data Access**: Room database + Retrofit for OpenAI API
 - **Dependency Injection**: Hilt for IoC container
 
