@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+@Suppress("LongParameterList") // Compose components require many parameters for customization
 @Composable
 fun MessageInput(
     value: String,

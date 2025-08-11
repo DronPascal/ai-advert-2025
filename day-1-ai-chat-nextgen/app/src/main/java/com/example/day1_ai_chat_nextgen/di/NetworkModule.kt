@@ -20,6 +20,8 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+    
+    private const val NETWORK_TIMEOUT_SECONDS = 30L
 
     @Provides
     @Singleton
@@ -32,10 +34,11 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
+        val timeoutSeconds = NETWORK_TIMEOUT_SECONDS
         val builder = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(timeoutSeconds, TimeUnit.SECONDS)
+            .readTimeout(timeoutSeconds, TimeUnit.SECONDS)
+            .writeTimeout(timeoutSeconds, TimeUnit.SECONDS)
 
         // Add API key interceptor for all requests
         val apiKeyInterceptor = Interceptor { chain ->

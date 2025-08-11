@@ -81,6 +81,7 @@ fun SystemMessageDivider(
     }
 }
 
+@Suppress("UnusedPrivateMember") // Preview function for development
 @Preview(showBackground = true)
 @Composable
 private fun SystemMessageDividerPreview() {
@@ -93,6 +94,7 @@ private fun SystemMessageDividerPreview() {
 }
 
 @Preview(showBackground = true)
+@Suppress("UnusedPrivateMember") // Preview function for development  
 @Composable
 private fun SystemMessageDividerNewThreadPreview() {
     MaterialTheme {

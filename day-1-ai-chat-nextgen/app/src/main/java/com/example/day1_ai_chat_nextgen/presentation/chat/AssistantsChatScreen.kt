@@ -49,6 +49,7 @@ import com.example.day1_ai_chat_nextgen.presentation.components.MessageBubble
 import com.example.day1_ai_chat_nextgen.presentation.components.MessageInput
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("LongMethod") // Compose screens are inherently complex
 @Composable
 fun AssistantsChatScreen(
     modifier: Modifier = Modifier,

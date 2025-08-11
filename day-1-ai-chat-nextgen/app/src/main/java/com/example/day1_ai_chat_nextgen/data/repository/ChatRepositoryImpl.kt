@@ -26,12 +26,20 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@Suppress("MatchingDeclarationName", "ReturnCount") // File named for interface, Result pattern needs multiple returns
 @Singleton
 class LegacyChatRepositoryImpl @Inject constructor(
     private val openAIApi: OpenAIApi,
     private val chatMessageDao: ChatMessageDao,
     private val json: Json
 ) : ChatRepository {
+    
+    companion object {
+        private const val HTTP_UNAUTHORIZED = 401
+        private const val HTTP_PAYMENT_REQUIRED = 402  
+        private const val HTTP_NOT_FOUND = 404
+        private const val HTTP_TOO_MANY_REQUESTS = 429
+    }
 
     override fun getMessages(): Flow<List<ChatMessage>> {
         return chatMessageDao.getAllMessages().map { entities ->
@@ -99,8 +107,8 @@ class LegacyChatRepositoryImpl @Inject constructor(
             Result.Error(ChatError.NetworkError)
         } catch (e: HttpException) {
             handleHttpError(e.code(), e.message())
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Unknown error occurred"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Unknown error occurred"))
         }
     }
 
@@ -108,8 +116,8 @@ class LegacyChatRepositoryImpl @Inject constructor(
         return try {
             chatMessageDao.clearAllMessages()
             Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to clear history"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to clear history"))
         }
     }
 
@@ -117,8 +125,8 @@ class LegacyChatRepositoryImpl @Inject constructor(
         return try {
             chatMessageDao.deleteMessage(messageId)
             Result.Success(Unit)
-        } catch (e: Exception) {
-            Result.Error(ChatError.UnknownError(e.message ?: "Failed to delete message"))
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to delete message"))
         }
     }
 
@@ -140,16 +148,16 @@ class LegacyChatRepositoryImpl @Inject constructor(
 
     private fun handleHttpError(code: Int, errorBody: String?): Result<ChatMessage> {
         return when (code) {
-            401 -> Result.Error(ChatError.ApiKeyInvalid)
-            429 -> Result.Error(ChatError.RateLimitExceeded)
-            402 -> Result.Error(ChatError.InsufficientCredits)
-            404 -> Result.Error(ChatError.ModelNotAvailable)
+            HTTP_UNAUTHORIZED -> Result.Error(ChatError.ApiKeyInvalid)
+            HTTP_TOO_MANY_REQUESTS -> Result.Error(ChatError.RateLimitExceeded)
+            HTTP_PAYMENT_REQUIRED -> Result.Error(ChatError.InsufficientCredits)
+            HTTP_NOT_FOUND -> Result.Error(ChatError.ModelNotAvailable)
             else -> {
                 val errorMessage = try {
                     errorBody?.let { 
                         json.decodeFromString<OpenAIErrorResponseDto>(it).error.message 
                     } ?: "HTTP $code"
-                } catch (e: Exception) {
+                } catch (expected: Exception) {
                     "HTTP $code"
                 }
                 Result.Error(ChatError.ApiError(code, errorMessage))

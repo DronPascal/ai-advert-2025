@@ -586,7 +586,7 @@ class AssistantsChatViewModel @Inject constructor(
             try {
                 // Deactivate all formats in database
                 chatRepository.deactivateAllFormats()
-            } catch (e: Exception) {
+            } catch (expected: Exception) {
                 // Non-critical error, format reset is mainly for UI
             }
         }
