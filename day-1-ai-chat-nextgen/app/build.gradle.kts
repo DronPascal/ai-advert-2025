@@ -59,6 +59,18 @@ android {
                 "proguard-rules.pro"
             )
         }
+        create("analyze") {
+            initWith(getByName("debug"))
+            isMinifyEnabled = true
+            isShrinkResources = false
+            isDebuggable = true
+            matchingFallbacks += listOf("debug")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+                "proguard-usage.pro",
+            )
+        }
     }
     
     compileOptions {
@@ -135,6 +147,7 @@ dependencies {
     testImplementation(libs.kotest.runner)
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.archunit.junit4)
     
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -158,4 +171,38 @@ detekt {
     allRules = false
     config.setFrom("$projectDir/../detekt.yml")
     baseline = file("$projectDir/detekt-baseline.xml")
+}
+
+// Task to generate a human-readable unused code report from R8 printusage output
+tasks.register("reportUnusedCode") {
+    group = "verification"
+    description = "Generate unused_code_report.md from R8 printusage for analyze build"
+    doLast {
+        val input = file("$buildDir/reports/unused/printusage-analyze.txt")
+        val output = file("$projectDir/../unused_code_report.md")
+        if (!input.exists()) {
+            println("No printusage file found. Run :app:assembleAnalyze first.")
+            return@doLast
+        }
+        val lines = input.readLines()
+        val grouped = lines.groupBy { line ->
+            val idx = line.indexOf("com.example.day1_ai_chat_nextgen")
+            if (idx >= 0) {
+                val pkg = line.substring(idx).substringBeforeLast('.')
+                pkg.substringBeforeLast('.')
+            } else "other"
+        }
+        val builder = StringBuilder()
+        builder.appendLine("# Unused Code Report (from R8 printusage)")
+        builder.appendLine()
+        builder.appendLine("Source: app/build/reports/unused/printusage-analyze.txt")
+        builder.appendLine()
+        grouped.toSortedMap().forEach { (pkg, items) ->
+            builder.appendLine("## $pkg")
+            items.sorted().forEach { builder.appendLine("- $it") }
+            builder.appendLine()
+        }
+        output.writeText(builder.toString())
+        println("Report written to: ${output.absolutePath}")
+    }
 }
