@@ -24,7 +24,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
+
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
@@ -42,7 +42,7 @@ class AssistantsChatRepositoryImplTest : BehaviorSpec({
         val mockResponseFormatDao = mock<ResponseFormatDao>()
         val mockSharedPreferences = mock<SharedPreferences>()
         val mockEditor = mock<SharedPreferences.Editor>()
-        val json = Json { ignoreUnknownKeys = true }
+
 
         whenever(mockSharedPreferences.edit()).thenReturn(mockEditor)
         whenever(mockEditor.putString(any(), any())).thenReturn(mockEditor)
@@ -53,8 +53,7 @@ class AssistantsChatRepositoryImplTest : BehaviorSpec({
             mockChatMessageDao,
             mockChatThreadDao,
             mockResponseFormatDao,
-            mockSharedPreferences,
-            json
+            mockSharedPreferences
         )
 
         `when`("getting or creating assistant for the first time") {

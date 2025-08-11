@@ -36,9 +36,9 @@
 
 ### OpenAI API Limits
 - **Rate Limits**: Handle 429 errors gracefully
-- **Token Limits**: Max 150 tokens per request
-- **Model**: GPT-3.5-turbo only (cost optimization)
-- **Context**: Limited conversation history (last 6 messages)
+- **Token Limits**: Recommended max completion tokens ~150 (configured per run)
+- **Model**: Assistants default `gpt-4o-mini` (performance/cost)
+- **Context**: Assistants threads use server-side memory
 
 ### User Experience
 - **Response Time**: <3 seconds for API responses

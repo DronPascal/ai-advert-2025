@@ -1,7 +1,6 @@
 package com.example.day1_ai_chat_nextgen.di
 
 import com.example.day1_ai_chat_nextgen.BuildConfig
-import com.example.day1_ai_chat_nextgen.data.remote.api.OpenAIApi
 import com.example.day1_ai_chat_nextgen.data.remote.api.OpenAIAssistantsApi
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
@@ -20,6 +19,8 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+    
+    private const val NETWORK_TIMEOUT_SECONDS = 30L
 
     @Provides
     @Singleton
@@ -32,10 +33,11 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {
+        val timeoutSeconds = NETWORK_TIMEOUT_SECONDS
         val builder = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(timeoutSeconds, TimeUnit.SECONDS)
+            .readTimeout(timeoutSeconds, TimeUnit.SECONDS)
+            .writeTimeout(timeoutSeconds, TimeUnit.SECONDS)
 
         // Add API key interceptor for all requests
         val apiKeyInterceptor = Interceptor { chain ->
@@ -72,12 +74,6 @@ object NetworkModule {
                 json.asConverterFactory("application/json".toMediaType())
             )
             .build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideOpenAIApi(retrofit: Retrofit): OpenAIApi {
-        return retrofit.create(OpenAIApi::class.java)
     }
 
     @Provides
