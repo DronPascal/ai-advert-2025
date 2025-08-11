@@ -34,4 +34,7 @@ data class ChatUiState(
 ) {
     val canSendMessage: Boolean
         get() = messageInput.isNotBlank() && !isSendingMessage && currentThread != null && !isInitializing
+    
+    val canTypeMessage: Boolean
+        get() = currentThread != null && !isInitializing
 }
