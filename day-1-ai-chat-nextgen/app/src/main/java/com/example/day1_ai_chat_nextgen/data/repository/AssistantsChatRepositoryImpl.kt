@@ -250,6 +250,15 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 val format = responseFormatDao.getFormat(id)
                 if (format != null) {
                     setActiveFormat(format.toDomain())
+                    
+                    // Add system message for format selection
+                    val formatMessage = ChatMessage(
+                        id = UUID.randomUUID().toString(),
+                        content = "Формат ответов обновлен: ${format.toDomain().name}",
+                        role = MessageRole.SYSTEM,
+                        timestamp = System.currentTimeMillis()
+                    )
+                    chatMessageDao.insertMessage(formatMessage.toEntity())
                 }
             }
 
