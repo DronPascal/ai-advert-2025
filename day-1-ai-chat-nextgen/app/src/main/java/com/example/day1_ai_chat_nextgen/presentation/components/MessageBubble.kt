@@ -34,43 +34,69 @@ fun MessageBubble(
     modifier: Modifier = Modifier,
     colors: MessageBubbleColors = MessageBubbleDefaults.colors()
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = when (message.role) {
-            MessageRole.USER -> Arrangement.End
-            MessageRole.ASSISTANT -> Arrangement.Start
-            MessageRole.SYSTEM -> Arrangement.Center
-        }
-    ) {
-        Card(
-            modifier = Modifier
-                .widthIn(max = 280.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 16.dp,
-                        topEnd = 16.dp,
-                        bottomStart = if (message.role == MessageRole.USER) 16.dp else 4.dp,
-                        bottomEnd = if (message.role == MessageRole.USER) 4.dp else 16.dp
-                    )
-                ),
-            colors = CardDefaults.cardColors(
-                containerColor = when (message.role) {
-                    MessageRole.USER -> colors.userBackground
-                    MessageRole.ASSISTANT -> colors.assistantBackground
-                    MessageRole.SYSTEM -> colors.assistantBackground
-                }
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-            Text(
-                text = message.content,
-                modifier = Modifier.padding(12.dp),
-                color = colors.textColor,
-                fontSize = 16.sp,
-                fontWeight = if (message.role == MessageRole.SYSTEM) FontWeight.Medium else FontWeight.Normal,
-                lineHeight = 20.sp
+    when (message.role) {
+        MessageRole.SYSTEM -> {
+            // Parse system message to extract icon and display proper divider
+            val (icon, text) = parseSystemMessage(message.content)
+            SystemMessageDivider(
+                message = text,
+                icon = icon,
+                modifier = modifier
             )
         }
+        else -> {
+            Row(
+                modifier = modifier.fillMaxWidth(),
+                horizontalArrangement = when (message.role) {
+                    MessageRole.USER -> Arrangement.End
+                    MessageRole.ASSISTANT -> Arrangement.Start
+                    MessageRole.SYSTEM -> Arrangement.Center
+                }
+            ) {
+                Card(
+                    modifier = Modifier
+                        .widthIn(max = 280.dp)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = 16.dp,
+                                topEnd = 16.dp,
+                                bottomStart = if (message.role == MessageRole.USER) 16.dp else 4.dp,
+                                bottomEnd = if (message.role == MessageRole.USER) 4.dp else 16.dp
+                            )
+                        ),
+                    colors = CardDefaults.cardColors(
+                        containerColor = when (message.role) {
+                            MessageRole.USER -> colors.userBackground
+                            MessageRole.ASSISTANT -> colors.assistantBackground
+                            MessageRole.SYSTEM -> colors.assistantBackground
+                        }
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Text(
+                        text = message.content,
+                        modifier = Modifier.padding(12.dp),
+                        color = colors.textColor,
+                        fontSize = 16.sp,
+                        fontWeight = if (message.role == MessageRole.SYSTEM) FontWeight.Medium else FontWeight.Normal,
+                        lineHeight = 20.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun parseSystemMessage(content: String): Pair<String, String> {
+    return when {
+        content.contains("Формат ответов обновлен", ignoreCase = true) ||
+        content.contains("формат", ignoreCase = true) -> "🔄" to content
+        content.contains("Новая беседа", ignoreCase = true) ||
+        content.contains("новый тред", ignoreCase = true) ||
+        content.contains("new thread", ignoreCase = true) -> "✨" to content
+        content.contains("Беседа очищена", ignoreCase = true) ||
+        content.contains("История очищена", ignoreCase = true) -> "🗑️" to content
+        else -> "ℹ️" to content
     }
 }
 

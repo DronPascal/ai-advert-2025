@@ -63,6 +63,16 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             chatMessageDao.clearAllMessages()
             chatThreadDao.clearAllThreads()
             sharedPreferences.edit().remove(PREF_CURRENT_THREAD_ID).apply()
+            
+            // Add system message for history clear
+            val clearMessage = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                content = "История беседы очищена",
+                role = MessageRole.SYSTEM,
+                timestamp = System.currentTimeMillis()
+            )
+            chatMessageDao.insertMessage(clearMessage.toEntity())
+            
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error(ChatError.UnknownError(e.message ?: "Failed to clear history"))
@@ -225,6 +235,15 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             sharedPreferences.edit()
                 .putString(PREF_CURRENT_THREAD_ID, chatThread.id)
                 .apply()
+
+            // Add system message for new thread creation
+            val newThreadMessage = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                content = "Новая беседа начата",
+                role = MessageRole.SYSTEM,
+                timestamp = System.currentTimeMillis()
+            )
+            chatMessageDao.insertMessage(newThreadMessage.toEntity())
 
             // If format is specified, send format instructions
             formatId?.let { id ->
@@ -525,7 +544,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 val systemMessage = ChatMessage(
                     id = UUID.randomUUID().toString(),
                     content = "Формат ответов обновлен: ${format.name}",
-                    role = MessageRole.USER, // We use USER role since OpenAI API doesn't support system role for threads
+                    role = MessageRole.SYSTEM, // Use SYSTEM role for divider display
                     timestamp = System.currentTimeMillis()
                 )
                 chatMessageDao.insertMessage(systemMessage.toEntity())

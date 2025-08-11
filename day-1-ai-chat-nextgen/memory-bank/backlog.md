@@ -6,6 +6,9 @@
 - [x] **Assistants API Migration** - Complete migration to OpenAI Assistants API with format persistence ✅
 - [x] **Enhanced Error Handling** - Comprehensive error handling for Assistants API scenarios ✅
 - [x] **Database Schema Update** - Room v2 with threads and formats support ✅
+- [x] **UI Responsiveness Fixes** - Immediate feedback for all user interactions ✅
+- [x] **API Key Authentication** - Centralized authentication with interceptor ✅
+- [x] **Dialog UX Improvements** - Standard dismissal patterns for all dialogs ✅
 - [ ] **API Key Security Enhancement** - Replace BuildConfig with encrypted storage for production
 - [ ] **Legacy Code Cleanup** - Remove Chat Completions implementation after migration validation
 - [ ] **Performance Optimization** - Optimize Assistants API polling and caching strategies
@@ -29,6 +32,9 @@
 - [x] **Thread Management** - Multiple conversation threads with switching ✅
 - [x] **Format Persistence** - Formats maintained across app sessions ✅
 - [x] **Session Restoration** - Seamless continuation after app restart ✅
+- [x] **Thread Format Updates** - Change formats within existing conversations ✅
+- [x] **Immediate UI Feedback** - Instant response to all user actions ✅
+- [x] **Responsive Interactions** - Optimistic updates with background processing ✅
 - [ ] **Message Search** - Search through chat history
 - [ ] **Message Categories** - Tag and organize conversations
 - [ ] **Conversation Templates** - Pre-defined conversation starters
