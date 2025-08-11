@@ -9,9 +9,13 @@
 - [x] **UI Responsiveness Fixes** - Immediate feedback for all user interactions ✅
 - [x] **API Key Authentication** - Centralized authentication with interceptor ✅
 - [x] **Dialog UX Improvements** - Standard dismissal patterns for all dialogs ✅
+- [x] **Format Context Preservation** - Fixed format loss during repeated changes within sessions ✅
+- [x] **Thread-Aware Format Updates** - Format changes update existing threads vs creating new ones ✅
+- [x] **System Message Dividers** - Elegant system event separators with contextual icons ✅
+- [x] **Performance Optimization** - Switched to GPT-4o-mini for faster responses ✅
+- [ ] **Format UI Consistency** - Fix format indicator visibility across different states (ACTIVE: Format indicator sometimes disappears when clicking "New Thread")
 - [ ] **API Key Security Enhancement** - Replace BuildConfig with encrypted storage for production
 - [ ] **Legacy Code Cleanup** - Remove Chat Completions implementation after migration validation
-- [ ] **Performance Optimization** - Optimize Assistants API polling and caching strategies
 - [ ] **ProGuard Optimization** - Fine-tune obfuscation rules for better app size
 
 ### Medium Priority
