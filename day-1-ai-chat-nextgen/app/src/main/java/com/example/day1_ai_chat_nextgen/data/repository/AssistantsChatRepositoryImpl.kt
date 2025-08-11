@@ -23,7 +23,7 @@ import com.example.day1_ai_chat_nextgen.domain.repository.ChatRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.json.Json
+
 import retrofit2.HttpException
 import java.io.IOException
 import java.util.UUID
@@ -36,8 +36,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
     private val chatMessageDao: ChatMessageDao,
     private val chatThreadDao: ChatThreadDao,
     private val responseFormatDao: ResponseFormatDao,
-    private val sharedPreferences: SharedPreferences,
-    private val json: Json
+    private val sharedPreferences: SharedPreferences
 ) : ChatRepository {
 
     companion object {
@@ -501,7 +500,6 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 when (run.status) {
                     "completed" -> return Result.Success(Unit)
                     "failed", "cancelled", "expired" -> {
-                        val errorMessage = run.lastError?.message ?: "Run ${run.status}"
                         return Result.Error(ChatError.RunFailed)
                     }
                     "requires_action" -> {

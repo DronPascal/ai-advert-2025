@@ -36,7 +36,6 @@ class ChatViewModelTest : BehaviorSpec({
     given("ChatViewModel") {
         val mockGetMessagesUseCase = mock<GetMessagesUseCase>()
         val mockSendMessageUseCase = mock<SendMessageUseCase>()
-        val mockChatRepository = mock<ChatRepository>()
 
         val initialMessages = listOf(
             ChatMessage(
