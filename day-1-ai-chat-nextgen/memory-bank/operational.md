@@ -102,6 +102,12 @@ if (BuildConfig.IS_DEBUG_BUILD) {
 - Clean build and retry
 - Check Hilt annotation processing
 
+**Format Issues**
+- Format indicator disappears after "New Thread": Expected behavior, format is reset
+- Format not applying after selection: Check if sendFormatInstructionMessage() is called
+- Duplicate format notifications: Ensure single source of truth in system message creation
+- Format context lost on changes: Verify updateCurrentThreadFormat() vs createNewThread() logic
+
 **Hilt JavaPoet ClassName Error**
 - Root cause: Missing plugin declarations in root build.gradle.kts
 - Solution: Add `alias(libs.plugins.hilt) apply false` to root build file

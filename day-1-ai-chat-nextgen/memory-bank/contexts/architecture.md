@@ -33,7 +33,9 @@ data/            # Data Access Layer
 - **Abstract Interface**: `ChatRepository` in domain layer
 - **Primary Implementation**: `AssistantsChatRepositoryImpl` with OpenAI Assistants API
 - **Legacy Implementation**: `LegacyChatRepositoryImpl` with Chat Completions API
-- **Enhanced Features**: Thread-aware format updates, centralized authentication
+- **Enhanced Features**: Thread-aware format updates, centralized authentication, format deactivation
+- **Format Management**: `deactivateAllFormats()`, `updateCurrentThreadFormat()`, format persistence
+- **System Messages**: Elegant dividers for format changes, thread creation, history clearing
 - **Benefits**: Testability, separation of concerns, data source abstraction, migration flexibility
 
 #### 2. Use Case Pattern
