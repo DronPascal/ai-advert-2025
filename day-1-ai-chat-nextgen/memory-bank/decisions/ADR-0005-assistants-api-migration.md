@@ -98,10 +98,10 @@ val response = pollRunCompletion(run.id)
 
 ### Phase 2: Default Switch ✅
 - Update dependency injection to use Assistants implementation
-- Maintain legacy code for fallback if needed
+ - No legacy fallback retained
 - User acceptance testing with new flow
 
-### Phase 3: Cleanup (Future)
+### Phase 3: Cleanup ✅
 - Remove legacy Chat Completions implementation
 - Clean up unused dependencies and code
 - Optimize for Assistants API patterns

@@ -37,8 +37,8 @@
 ### OpenAI API Limits
 - **Rate Limits**: Handle 429 errors gracefully
 - **Token Limits**: Recommended max completion tokens ~150 (configured per run)
-- **Model**: Assistants default `gpt-4o-mini` (performance/cost); legacy Chat Completions fallback `gpt-3.5-turbo`
-- **Context**: Assistants threads use server-side memory; legacy Chat Completions limited to last 6 messages
+- **Model**: Assistants default `gpt-4o-mini` (performance/cost)
+- **Context**: Assistants threads use server-side memory
 
 ### User Experience
 - **Response Time**: <3 seconds for API responses

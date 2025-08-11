@@ -149,8 +149,8 @@ if (BuildConfig.IS_DEBUG_BUILD) {
 ## Backup and Recovery
 
 ### User Data
-- Room database stored in app's private directory
-- Automatic Android backup if enabled
+ - Room database stored in app's private directory
+ - Android auto backup disabled (android:allowBackup=false)
 - No cloud sync implemented (future enhancement)
 
 ### Configuration

@@ -1,7 +1,7 @@
 # Active Context - AI Chat NextGen
 
 ## Current Focus
-- Assistants API is the primary flow; legacy Chat Completions retained only for backward-compatibility.
+- Assistants API is the only flow; legacy Chat Completions removed.
 - Response format management is thread-aware: update format within the current thread when possible; reset on new thread.
 - UI polish: occasional visibility issues with the format indicator after New Thread.
 
