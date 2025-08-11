@@ -114,7 +114,6 @@ class AssistantsChatRepositoryImpl @Inject constructor(
 
             // Add user message to thread
             val messageResponse = assistantsApi.createMessage(
-                authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
                 threadId = currentThread.threadId,
                 request = CreateMessageRequestDto(
                     role = "user",
@@ -143,7 +142,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
 
             // Get latest messages from thread
             val messagesResponse = assistantsApi.getMessages(
-                authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
+
                 threadId = currentThread.threadId,
                 limit = 1,
                 order = "desc"
@@ -198,7 +197,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
 
             // Create OpenAI thread
             val threadResponse = assistantsApi.createThread(
-                authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
+
                 request = CreateThreadRequestDto()
             )
 
@@ -334,7 +333,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             // Try to use saved assistant ID
             if (savedAssistantId != null) {
                 val assistantResponse = assistantsApi.getAssistant(
-                    authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
+    
                     assistantId = savedAssistantId
                 )
                 
@@ -345,7 +344,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
 
             // Create new assistant
             val createResponse = assistantsApi.createAssistant(
-                authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
+
                 request = CreateAssistantRequestDto(
                     instructions = ResponseFormat.getDefaultSystemInstructions()
                 )
@@ -398,7 +397,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
 
             // Create run
             val runResponse = assistantsApi.createRun(
-                authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
+
                 threadId = thread.threadId,
                 request = CreateRunRequestDto(
                     assistantId = assistantId,
@@ -427,7 +426,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         while (System.currentTimeMillis() - startTime < RUN_TIMEOUT_MS) {
             try {
                 val runResponse = assistantsApi.getRun(
-                    authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
+    
                     threadId = threadId,
                     runId = runId
                 )

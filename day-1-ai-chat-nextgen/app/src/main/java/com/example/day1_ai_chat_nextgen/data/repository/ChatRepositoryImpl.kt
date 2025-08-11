@@ -61,7 +61,7 @@ class LegacyChatRepositoryImpl @Inject constructor(
             )
 
             val response = openAIApi.createChatCompletion(
-                authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
+
                 request = request
             )
 
