@@ -10,10 +10,8 @@ import retrofit2.http.POST
 
 interface OpenAIApi {
     
-    @Headers("Content-Type: application/json")
     @POST("v1/chat/completions")
     suspend fun createChatCompletion(
-        @Header("Authorization") authorization: String,
         @Body request: OpenAIChatRequestDto
     ): Response<OpenAIChatResponseDto>
 }

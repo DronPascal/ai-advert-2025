@@ -3,6 +3,8 @@ package com.example.day1_ai_chat_nextgen.di
 import android.content.Context
 import androidx.room.Room
 import com.example.day1_ai_chat_nextgen.data.local.dao.ChatMessageDao
+import com.example.day1_ai_chat_nextgen.data.local.dao.ChatThreadDao
+import com.example.day1_ai_chat_nextgen.data.local.dao.ResponseFormatDao
 import com.example.day1_ai_chat_nextgen.data.local.database.ChatDatabase
 import dagger.Module
 import dagger.Provides
@@ -30,5 +32,15 @@ object DatabaseModule {
     @Provides
     fun provideChatMessageDao(database: ChatDatabase): ChatMessageDao {
         return database.chatMessageDao()
+    }
+
+    @Provides
+    fun provideChatThreadDao(database: ChatDatabase): ChatThreadDao {
+        return database.chatThreadDao()
+    }
+
+    @Provides
+    fun provideResponseFormatDao(database: ChatDatabase): ResponseFormatDao {
+        return database.responseFormatDao()
     }
 }

@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.example.day1_ai_chat_nextgen.domain.model.ChatMessage
 import com.example.day1_ai_chat_nextgen.domain.model.MessageRole
 import com.example.day1_ai_chat_nextgen.domain.model.Result
+import com.example.day1_ai_chat_nextgen.domain.repository.ChatRepository
 import com.example.day1_ai_chat_nextgen.domain.usecase.GetMessagesUseCase
 import com.example.day1_ai_chat_nextgen.domain.usecase.SendMessageUseCase
 import io.kotest.core.spec.style.BehaviorSpec
@@ -35,6 +36,7 @@ class ChatViewModelTest : BehaviorSpec({
     given("ChatViewModel") {
         val mockGetMessagesUseCase = mock<GetMessagesUseCase>()
         val mockSendMessageUseCase = mock<SendMessageUseCase>()
+        val mockChatRepository = mock<ChatRepository>()
 
         val initialMessages = listOf(
             ChatMessage(
@@ -47,7 +49,7 @@ class ChatViewModelTest : BehaviorSpec({
         whenever(mockGetMessagesUseCase()).thenReturn(flowOf(initialMessages))
 
         `when`("initialized") {
-            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase)
+            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase, mockChatRepository)
 
             then("should load initial messages") {
                 runTest {
@@ -61,7 +63,7 @@ class ChatViewModelTest : BehaviorSpec({
         }
 
         `when`("message input changes") {
-            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase)
+            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase, mockChatRepository)
             val newMessage = "Test message"
 
             then("should update message input in state") {
@@ -77,7 +79,7 @@ class ChatViewModelTest : BehaviorSpec({
         }
 
         `when`("sending a message successfully") {
-            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase)
+            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase, mockChatRepository)
             val testMessage = "Test message"
             val responseMessage = ChatMessage(
                 id = "2",
@@ -116,7 +118,7 @@ class ChatViewModelTest : BehaviorSpec({
         }
 
         `when`("send message fails") {
-            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase)
+            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase, mockChatRepository)
             val testMessage = "Test message"
             val errorMessage = "Network error"
 
@@ -147,7 +149,7 @@ class ChatViewModelTest : BehaviorSpec({
         }
 
         `when`("dismissing error") {
-            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase)
+            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase, mockChatRepository)
 
             then("should clear error from state") {
                 runTest {

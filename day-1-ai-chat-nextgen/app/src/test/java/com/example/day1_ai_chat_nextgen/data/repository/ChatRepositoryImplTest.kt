@@ -30,7 +30,7 @@ class ChatRepositoryImplTest : BehaviorSpec({
         val mockChatMessageDao = mock<ChatMessageDao>()
         val json = Json { ignoreUnknownKeys = true }
         
-        val repository = ChatRepositoryImpl(mockOpenAIApi, mockChatMessageDao, json)
+        val repository = LegacyChatRepositoryImpl(mockOpenAIApi, mockChatMessageDao, json)
 
         `when`("getting messages") {
             val entities = listOf(
@@ -84,7 +84,7 @@ class ChatRepositoryImplTest : BehaviorSpec({
                 )
             )
 
-            whenever(mockOpenAIApi.createChatCompletion(any(), any()))
+            whenever(mockOpenAIApi.createChatCompletion(any()))
                 .thenReturn(Response.success(openAIResponse))
 
             then("should save user message and return AI response") {
@@ -108,7 +108,7 @@ class ChatRepositoryImplTest : BehaviorSpec({
                 role = MessageRole.USER
             )
 
-            whenever(mockOpenAIApi.createChatCompletion(any(), any()))
+            whenever(mockOpenAIApi.createChatCompletion(any()))
                 .thenReturn(Response.error(401, mock()))
 
             then("should return API key invalid error") {
@@ -128,7 +128,7 @@ class ChatRepositoryImplTest : BehaviorSpec({
                 role = MessageRole.USER
             )
 
-            whenever(mockOpenAIApi.createChatCompletion(any(), any()))
+            whenever(mockOpenAIApi.createChatCompletion(any()))
                 .thenReturn(Response.error(429, mock()))
 
             then("should return rate limit error") {
