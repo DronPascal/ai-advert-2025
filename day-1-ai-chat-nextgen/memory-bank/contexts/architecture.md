@@ -20,9 +20,9 @@ data/            # Data Access Layer
 │   ├── dao/     # Data Access Objects (enhanced with threads/formats)
 │   ├── entity/  # Database entities (ChatThread, ResponseFormat)
 │   └── database/ # Room database configuration (v2 schema)
-├── remote/      # OpenAI API implementation (dual: completions + assistants)
-│   ├── api/     # API interfaces (OpenAIApi, OpenAIAssistantsApi)
-│   └── dto/     # Data transfer objects (chat + assistants DTOs)
+├── remote/      # OpenAI API implementation (Assistants only)
+│   ├── api/     # API interfaces (OpenAIAssistantsApi)
+│   └── dto/     # Data transfer objects (Assistants DTOs)
 ├── mapper/      # Data transformation (enhanced with threads/formats)
 └── repository/  # Repository implementations (legacy + assistants)
 ```
@@ -31,17 +31,14 @@ data/            # Data Access Layer
 
 #### 1. Repository Pattern
 - **Abstract Interface**: `ChatRepository` in domain layer
-- **Primary Implementation**: `AssistantsChatRepositoryImpl` with OpenAI Assistants API
-- **Legacy Implementation**: `LegacyChatRepositoryImpl` with Chat Completions API
+- **Implementation**: `AssistantsChatRepositoryImpl` with OpenAI Assistants API
 - **Enhanced Features**: Thread-aware format updates, centralized authentication, format deactivation
 - **Format Management**: `deactivateAllFormats()`, `updateCurrentThreadFormat()`, format persistence
 - **System Messages**: Elegant dividers for format changes, thread creation, history clearing
 - **Benefits**: Testability, separation of concerns, data source abstraction, migration flexibility
 
 #### 2. Use Case Pattern
-- **Single Responsibility**: Each use case handles one business operation
-- **Examples**: `SendMessageUseCase`, `GetMessagesUseCase`
-- **Benefits**: Reusable business logic, easier testing
+- Removed with legacy flow; Assistants ViewModel orchestrates repository directly.
 
 #### 3. MVI (Model-View-Intent) Pattern
 - **Immutable State**: `ChatUiState` with `@Immutable` annotation
