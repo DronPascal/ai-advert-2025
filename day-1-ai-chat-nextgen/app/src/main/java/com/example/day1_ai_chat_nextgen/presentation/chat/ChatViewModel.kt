@@ -21,8 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val getMessagesUseCase: GetMessagesUseCase,
-    private val sendMessageUseCase: SendMessageUseCase,
-    private val chatRepository: ChatRepository
+    private val sendMessageUseCase: SendMessageUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
