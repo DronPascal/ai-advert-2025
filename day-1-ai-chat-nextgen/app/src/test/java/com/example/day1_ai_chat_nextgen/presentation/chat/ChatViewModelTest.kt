@@ -49,7 +49,7 @@ class ChatViewModelTest : BehaviorSpec({
         whenever(mockGetMessagesUseCase()).thenReturn(flowOf(initialMessages))
 
         `when`("initialized") {
-            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase, mockChatRepository)
+            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase)
 
             then("should load initial messages") {
                 runTest {
@@ -63,7 +63,7 @@ class ChatViewModelTest : BehaviorSpec({
         }
 
         `when`("message input changes") {
-            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase, mockChatRepository)
+            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase)
             val newMessage = "Test message"
 
             then("should update message input in state") {
@@ -79,7 +79,7 @@ class ChatViewModelTest : BehaviorSpec({
         }
 
         `when`("sending a message successfully") {
-            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase, mockChatRepository)
+            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase)
             val testMessage = "Test message"
             val responseMessage = ChatMessage(
                 id = "2",
@@ -118,7 +118,7 @@ class ChatViewModelTest : BehaviorSpec({
         }
 
         `when`("send message fails") {
-            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase, mockChatRepository)
+            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase)
             val testMessage = "Test message"
             val errorMessage = "Network error"
 
@@ -149,7 +149,7 @@ class ChatViewModelTest : BehaviorSpec({
         }
 
         `when`("dismissing error") {
-            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase, mockChatRepository)
+            val viewModel = ChatViewModel(mockGetMessagesUseCase, mockSendMessageUseCase)
 
             then("should clear error from state") {
                 runTest {

@@ -133,9 +133,7 @@ class LegacyChatRepositoryImpl @Inject constructor(
             )
         )
 
-        // Get recent conversation history (last 10 messages for context)
-        val recentMessages = chatMessageDao.getAllMessages()
-        // Note: This is simplified - in real implementation you'd want to limit the query
+        // Note: Context handling is implemented in the newer AssistantsChatRepositoryImpl
         
         return messages
     }
