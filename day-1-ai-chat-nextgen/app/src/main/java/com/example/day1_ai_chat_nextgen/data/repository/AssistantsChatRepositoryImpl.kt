@@ -251,6 +251,9 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 if (format != null) {
                     setActiveFormat(format.toDomain())
                     
+                    // Send format instruction message to the OpenAI thread
+                    sendFormatInstructionMessage(chatThread, format.toDomain())
+                    
                     // Add system message for format selection
                     val formatMessage = ChatMessage(
                         id = UUID.randomUUID().toString(),
