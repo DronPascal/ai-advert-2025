@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 // Assistant DTOs
 @Serializable
 data class CreateAssistantRequestDto(
-    @SerialName("model") val model: String = "gpt-4o-2024-08-06",
+    @SerialName("model") val model: String = "gpt-4o-mini",
     @SerialName("name") val name: String = "Free-Format Chat",
     @SerialName("instructions") val instructions: String,
     @SerialName("tools") val tools: List<AssistantToolDto> = emptyList(),
