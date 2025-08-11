@@ -337,7 +337,15 @@ class AssistantsChatViewModel @Inject constructor(
     private fun setCustomFormat(instructions: String) {
         if (instructions.isBlank()) return
         
-        _uiState.update { it.copy(isSettingFormat = true) }
+        // Close dialog immediately for better UX
+        _uiState.update { 
+            it.copy(
+                showFormatDialog = false,
+                needsFormatSelection = false,
+                formatInput = "",
+                isSettingFormat = true
+            ) 
+        }
         
         viewModelScope.launch {
             when (val result = chatRepository.setResponseFormat(instructions)) {
@@ -361,7 +369,15 @@ class AssistantsChatViewModel @Inject constructor(
     }
 
     private fun selectPredefinedFormat(format: com.example.day1_ai_chat_nextgen.domain.model.ResponseFormat) {
-        _uiState.update { it.copy(isSettingFormat = true) }
+        // Close dialog immediately for better UX
+        _uiState.update { 
+            it.copy(
+                showFormatDialog = false,
+                needsFormatSelection = false,
+                formatInput = "",
+                isSettingFormat = true
+            ) 
+        }
         
         viewModelScope.launch {
             when (val result = chatRepository.setResponseFormat(format)) {
@@ -469,8 +485,15 @@ class AssistantsChatViewModel @Inject constructor(
     }
 
     private fun skipFormatSelection() {
-        // Create a thread without format
-        _uiState.update { it.copy(isCreatingThread = true) }
+        // Close dialog immediately and create a thread without format
+        _uiState.update { 
+            it.copy(
+                showFormatDialog = false,
+                needsFormatSelection = false,
+                formatInput = "",
+                isCreatingThread = true
+            ) 
+        }
         
         viewModelScope.launch {
             when (val result = chatRepository.createNewThread()) {
