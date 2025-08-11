@@ -253,15 +253,6 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                     
                     // Send format instruction message to the OpenAI thread
                     sendFormatInstructionMessage(chatThread, format.toDomain())
-                    
-                    // Add system message for format selection
-                    val formatMessage = ChatMessage(
-                        id = UUID.randomUUID().toString(),
-                        content = "Формат ответов обновлен: ${format.toDomain().name}",
-                        role = MessageRole.SYSTEM,
-                        timestamp = System.currentTimeMillis()
-                    )
-                    chatMessageDao.insertMessage(formatMessage.toEntity())
                 }
             }
 
