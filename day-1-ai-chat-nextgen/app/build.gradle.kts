@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.detekt)
 }
 
 android {
@@ -149,4 +150,12 @@ dependencies {
 // Allow references to generated code
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+// Detekt configuration
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    config.setFrom("$projectDir/../detekt.yml")
+    baseline = file("$projectDir/detekt-baseline.xml")
 }
