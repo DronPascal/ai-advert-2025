@@ -19,9 +19,9 @@ We will migrate from the Chat Completions API to the OpenAI Assistants API to en
 ### Architecture Changes
 
 #### API Layer
-- **New API Interface**: `OpenAIAssistantsApi` with comprehensive endpoint coverage
-- **Enhanced DTOs**: Complete set of data transfer objects for all Assistants API entities
-- **Backward Compatibility**: Legacy `OpenAIApi` maintained for transition period
+- **API Interface**: `OpenAIAssistantsApi` with comprehensive endpoint coverage
+- **DTOs**: Complete set of data transfer objects for all Assistants API entities
+- **Cleanup**: Legacy `OpenAIApi` and Chat Completions fallback removed
 
 #### Domain Layer
 - **New Models**: `ChatThread`, `ResponseFormat` with rich behavior
@@ -98,10 +98,10 @@ val response = pollRunCompletion(run.id)
 
 ### Phase 2: Default Switch ✅
 - Update dependency injection to use Assistants implementation
-- Maintain legacy code for fallback if needed
+ - No legacy fallback retained
 - User acceptance testing with new flow
 
-### Phase 3: Cleanup (Future)
+### Phase 3: Cleanup ✅
 - Remove legacy Chat Completions implementation
 - Clean up unused dependencies and code
 - Optimize for Assistants API patterns
