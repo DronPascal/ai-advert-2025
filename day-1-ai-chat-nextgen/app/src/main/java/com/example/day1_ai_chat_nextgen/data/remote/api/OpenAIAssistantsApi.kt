@@ -20,46 +20,40 @@ import retrofit2.http.Query
 
 interface OpenAIAssistantsApi {
     
-    @Headers("Content-Type: application/json", "OpenAI-Beta: assistants=v2")
+    @Headers("OpenAI-Beta: assistants=v2")
     @POST("v1/assistants")
     suspend fun createAssistant(
-        @Header("Authorization") authorization: String,
         @Body request: CreateAssistantRequestDto
     ): Response<AssistantDto>
     
-    @Headers("Content-Type: application/json", "OpenAI-Beta: assistants=v2")
+    @Headers("OpenAI-Beta: assistants=v2")
     @GET("v1/assistants/{assistant_id}")
     suspend fun getAssistant(
-        @Header("Authorization") authorization: String,
         @Path("assistant_id") assistantId: String
     ): Response<AssistantDto>
     
-    @Headers("Content-Type: application/json", "OpenAI-Beta: assistants=v2")
+    @Headers("OpenAI-Beta: assistants=v2")
     @POST("v1/threads")
     suspend fun createThread(
-        @Header("Authorization") authorization: String,
         @Body request: CreateThreadRequestDto = CreateThreadRequestDto()
     ): Response<ThreadDto>
     
-    @Headers("Content-Type: application/json", "OpenAI-Beta: assistants=v2")
+    @Headers("OpenAI-Beta: assistants=v2")
     @GET("v1/threads/{thread_id}")
     suspend fun getThread(
-        @Header("Authorization") authorization: String,
         @Path("thread_id") threadId: String
     ): Response<ThreadDto>
     
-    @Headers("Content-Type: application/json", "OpenAI-Beta: assistants=v2")
+    @Headers("OpenAI-Beta: assistants=v2")
     @POST("v1/threads/{thread_id}/messages")
     suspend fun createMessage(
-        @Header("Authorization") authorization: String,
         @Path("thread_id") threadId: String,
         @Body request: CreateMessageRequestDto
     ): Response<ThreadMessageDto>
     
-    @Headers("Content-Type: application/json", "OpenAI-Beta: assistants=v2")
+    @Headers("OpenAI-Beta: assistants=v2")
     @GET("v1/threads/{thread_id}/messages")
     suspend fun getMessages(
-        @Header("Authorization") authorization: String,
         @Path("thread_id") threadId: String,
         @Query("limit") limit: Int? = null,
         @Query("order") order: String? = "desc",
@@ -67,18 +61,16 @@ interface OpenAIAssistantsApi {
         @Query("before") before: String? = null
     ): Response<MessagesResponseDto>
     
-    @Headers("Content-Type: application/json", "OpenAI-Beta: assistants=v2")
+    @Headers("OpenAI-Beta: assistants=v2")
     @POST("v1/threads/{thread_id}/runs")
     suspend fun createRun(
-        @Header("Authorization") authorization: String,
         @Path("thread_id") threadId: String,
         @Body request: CreateRunRequestDto
     ): Response<RunDto>
     
-    @Headers("Content-Type: application/json", "OpenAI-Beta: assistants=v2")
+    @Headers("OpenAI-Beta: assistants=v2")
     @GET("v1/threads/{thread_id}/runs/{run_id}")
     suspend fun getRun(
-        @Header("Authorization") authorization: String,
         @Path("thread_id") threadId: String,
         @Path("run_id") runId: String
     ): Response<RunDto>
