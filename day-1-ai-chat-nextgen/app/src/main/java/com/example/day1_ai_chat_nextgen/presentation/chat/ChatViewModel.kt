@@ -150,7 +150,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun deleteMessage(messageId: String) {
+    private fun deleteMessage(@Suppress("UNUSED_PARAMETER") messageId: String) {
         viewModelScope.launch {
             // Implementation would call repository to delete specific message
             // For now, just update UI state
