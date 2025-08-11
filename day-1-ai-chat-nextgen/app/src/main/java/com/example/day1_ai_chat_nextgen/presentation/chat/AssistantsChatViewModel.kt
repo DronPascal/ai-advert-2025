@@ -2,6 +2,8 @@ package com.example.day1_ai_chat_nextgen.presentation.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.day1_ai_chat_nextgen.domain.model.ChatMessage
+import com.example.day1_ai_chat_nextgen.domain.model.MessageRole
 import com.example.day1_ai_chat_nextgen.domain.model.Result
 import com.example.day1_ai_chat_nextgen.domain.repository.ChatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -247,10 +249,19 @@ class AssistantsChatViewModel @Inject constructor(
 
         val messageToSend = currentState.messageInput.trim()
         
-        // Clear input immediately for better UX
+        // Create user message for immediate display
+        val userMessage = ChatMessage(
+            id = "temp_${System.currentTimeMillis()}", // Temporary ID
+            content = messageToSend,
+            role = MessageRole.USER,
+            timestamp = System.currentTimeMillis()
+        )
+        
+        // Add user message to UI immediately and clear input
         _uiState.update { 
             it.copy(
                 messageInput = "",
+                messages = it.messages + userMessage, // Add user message immediately
                 isSendingMessage = true,
                 error = null
             )
