@@ -32,7 +32,8 @@ fun MessageInput(
     modifier: Modifier = Modifier,
     placeholder: String = "Type a message...",
     backgroundColor: Color = Color(0xFF1A1A2E),
-    sendButtonColor: Color = Color(0xFF6366F1)
+    sendButtonColor: Color = Color(0xFF6366F1),
+    canSend: Boolean = enabled && value.isNotBlank()
 ) {
     Card(
         modifier = modifier
@@ -73,7 +74,7 @@ fun MessageInput(
 
             Button(
                 onClick = onSendClick,
-                enabled = enabled && value.isNotBlank(),
+                enabled = canSend,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = sendButtonColor,
                     disabledContainerColor = Color.Gray

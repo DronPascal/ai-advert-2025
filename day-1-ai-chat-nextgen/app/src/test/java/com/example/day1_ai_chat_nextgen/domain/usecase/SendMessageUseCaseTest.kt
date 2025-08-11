@@ -28,7 +28,7 @@ class SendMessageUseCaseTest : BehaviorSpec({
                 role = MessageRole.ASSISTANT
             )
             
-            whenever(mockRepository.sendMessage(any())).thenReturn(Result.Success(expectedMessage))
+            whenever(mockRepository.sendMessage(any<ChatMessage>())).thenReturn(Result.Success(expectedMessage))
 
             then("should emit loading then success") {
                 runTest {
@@ -75,7 +75,7 @@ class SendMessageUseCaseTest : BehaviorSpec({
 
         `when`("repository returns error") {
             val error = RuntimeException("Network error")
-            whenever(mockRepository.sendMessage(any())).thenReturn(Result.Error(error))
+            whenever(mockRepository.sendMessage(any<ChatMessage>())).thenReturn(Result.Error(error))
 
             then("should emit loading then error") {
                 runTest {

@@ -1,6 +1,6 @@
 package com.example.day1_ai_chat_nextgen.di
 
-import com.example.day1_ai_chat_nextgen.data.repository.ChatRepositoryImpl
+import com.example.day1_ai_chat_nextgen.data.repository.AssistantsChatRepositoryImpl
 import com.example.day1_ai_chat_nextgen.domain.repository.ChatRepository
 import dagger.Binds
 import dagger.Module
@@ -15,6 +15,6 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindChatRepository(
-        chatRepositoryImpl: ChatRepositoryImpl
+        assistantsChatRepositoryImpl: AssistantsChatRepositoryImpl
     ): ChatRepository
 }
