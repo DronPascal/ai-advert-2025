@@ -1,9 +1,7 @@
 package com.example.day1_ai_chat_nextgen.data.local.database
 
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
-import android.content.Context
 import com.example.day1_ai_chat_nextgen.data.local.dao.ChatMessageDao
 import com.example.day1_ai_chat_nextgen.data.local.dao.ChatThreadDao
 import com.example.day1_ai_chat_nextgen.data.local.dao.ResponseFormatDao
@@ -24,7 +22,7 @@ abstract class ChatDatabase : RoomDatabase() {
     abstract fun chatMessageDao(): ChatMessageDao
     abstract fun chatThreadDao(): ChatThreadDao
     abstract fun responseFormatDao(): ResponseFormatDao
-    
+
     companion object {
         const val DATABASE_NAME = "chat_database"
     }

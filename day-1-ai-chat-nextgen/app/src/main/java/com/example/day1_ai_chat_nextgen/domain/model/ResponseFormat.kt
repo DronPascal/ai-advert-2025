@@ -24,7 +24,7 @@ data class ResponseFormat(
                 isCustom = true
             )
         }
-        
+
         fun getDefaultSystemInstructions(): String {
             return """
                 Всегда следуй формату ответа, который пользователь зафиксирует в этом треде.
@@ -33,7 +33,7 @@ data class ResponseFormat(
                 Отвечай на русском языке, если не указано иное.
             """.trimIndent()
         }
-        
+
         val PREDEFINED_FORMATS = listOf(
             ResponseFormat(
                 id = "structured_list",

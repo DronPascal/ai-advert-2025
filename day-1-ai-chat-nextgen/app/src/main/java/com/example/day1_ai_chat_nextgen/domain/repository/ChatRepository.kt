@@ -12,14 +12,14 @@ interface ChatRepository {
     suspend fun sendMessage(message: ChatMessage): Result<ChatMessage>
     suspend fun clearHistory(): Result<Unit>
     suspend fun deleteMessage(messageId: String): Result<Unit>
-    
+
     // New Assistants API functions
     suspend fun sendMessage(content: String): Result<ChatMessage>
     suspend fun getCurrentThread(): Result<ChatThread?>
     suspend fun createNewThread(formatId: String? = null): Result<ChatThread>
     suspend fun switchToThread(threadId: String): Result<ChatThread>
     fun getAllThreads(): Flow<List<ChatThread>>
-    
+
     // Format management
     suspend fun setResponseFormat(formatInstructions: String): Result<ResponseFormat>
     suspend fun setResponseFormat(format: ResponseFormat): Result<ResponseFormat>
@@ -28,7 +28,7 @@ interface ChatRepository {
     suspend fun getActiveFormat(): Result<ResponseFormat?>
     suspend fun getPredefinedFormats(): Result<List<ResponseFormat>>
     fun getAllFormats(): Flow<List<ResponseFormat>>
-    
+
     // Assistant management
     suspend fun getOrCreateAssistant(): Result<String>
     suspend fun initializePredefinedFormats(): Result<Unit>

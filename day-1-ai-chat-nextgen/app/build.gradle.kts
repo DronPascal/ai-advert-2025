@@ -1,5 +1,5 @@
-import java.util.Properties
 import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -33,12 +33,20 @@ android {
 
         // Only expose API key in debug builds
         if (gradle.startParameter.taskNames.any { it.contains("debug", ignoreCase = true) }) {
-            buildConfigField("String", "OPENAI_API_KEY", "\"${localProperties.getProperty("openai_api_key", "")}\"")
+            buildConfigField(
+                "String",
+                "OPENAI_API_KEY",
+                "\"${localProperties.getProperty("openai_api_key", "")}\""
+            )
         } else {
             buildConfigField("String", "OPENAI_API_KEY", "\"\"")
         }
-        
-        buildConfigField("boolean", "IS_DEBUG_BUILD", "${gradle.startParameter.taskNames.any { it.contains("debug", ignoreCase = true) }}")
+
+        buildConfigField(
+            "boolean",
+            "IS_DEBUG_BUILD",
+            "${gradle.startParameter.taskNames.any { it.contains("debug", ignoreCase = true) }}"
+        )
     }
 
     buildTypes {
@@ -63,7 +71,7 @@ android {
             initWith(getByName("debug"))
             isMinifyEnabled = true
             isShrinkResources = false
-            isDebuggable = true
+            isDebuggable = false // enable full R8 optimizations
             matchingFallbacks += listOf("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -72,12 +80,12 @@ android {
             )
         }
     }
-    
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    
+
     kotlinOptions {
         jvmTarget = "17"
         freeCompilerArgs += listOf(
@@ -85,12 +93,12 @@ android {
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
         )
     }
-    
+
     buildFeatures {
         compose = true
         buildConfig = true
     }
-    
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -148,14 +156,14 @@ dependencies {
     testImplementation(libs.kotest.assertions)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.archunit.junit4)
-    
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.hilt.android.testing)
     kspAndroidTest(libs.hilt.compiler)
-    
+
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
@@ -184,23 +192,44 @@ tasks.register("reportUnusedCode") {
             println("No printusage file found. Run :app:assembleAnalyze first.")
             return@doLast
         }
-        val lines = input.readLines()
-        val grouped = lines.groupBy { line ->
-            val idx = line.indexOf("com.example.day1_ai_chat_nextgen")
-            if (idx >= 0) {
-                val pkg = line.substring(idx).substringBeforeLast('.')
-                pkg.substringBeforeLast('.')
-            } else "other"
+        val raw = input.readLines()
+        val projectPkg = "com.example.day1_ai_chat_nextgen"
+
+        // Keep only our package lines and drop method/member signature noise and generated code patterns
+        val skipSubstrings = listOf(
+            "_Factory", "_MembersInjector", "Dagger", "HiltComponents", "_Hilt",
+            "hilt_aggregated_deps", "_Impl", "\$\$serializer", "\$\$inlined\$", "copy\$default",
+            ":", // often class header noise
+        )
+        val filtered = raw.asSequence()
+            .filter { it.contains(projectPkg) }
+            .filter { line ->
+                // remove obvious method signatures and access flags
+                !line.contains("(") && !line.contains(")") &&
+                !line.contains(" public ") && !line.contains(" synthetic ")
+            }
+            .map { it.trim().removePrefix("-").trim() }
+            .filter { line -> skipSubstrings.none { sub -> line.contains(sub) } }
+            .toList()
+
+        val grouped = filtered.groupBy { line ->
+            val pkg = line.substringBeforeLast('.', missingDelimiterValue = line)
+            pkg.substringBeforeLast('.', missingDelimiterValue = pkg)
         }
+
         val builder = StringBuilder()
         builder.appendLine("# Unused Code Report (from R8 printusage)")
         builder.appendLine()
         builder.appendLine("Source: app/build/reports/unused/printusage-analyze.txt")
         builder.appendLine()
-        grouped.toSortedMap().forEach { (pkg, items) ->
-            builder.appendLine("## $pkg")
-            items.sorted().forEach { builder.appendLine("- $it") }
-            builder.appendLine()
+        if (filtered.isEmpty()) {
+            builder.appendLine("No project classes detected as unused by R8 (after filtering generated code). ✅")
+        } else {
+            grouped.toSortedMap().forEach { (pkg, items) ->
+                builder.appendLine("## $pkg")
+                items.sorted().forEach { builder.appendLine("- $it") }
+                builder.appendLine()
+            }
         }
         output.writeText(builder.toString())
         println("Report written to: ${output.absolutePath}")

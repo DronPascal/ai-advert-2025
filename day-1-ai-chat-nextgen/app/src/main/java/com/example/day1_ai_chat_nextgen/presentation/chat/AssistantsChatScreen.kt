@@ -36,7 +36,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -106,7 +105,7 @@ fun AssistantsChatScreen(
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
-                    
+
                     DropdownMenu(
                         expanded = showOptionsMenu,
                         onDismissRequest = { showOptionsMenu = false }
@@ -138,12 +137,12 @@ fun AssistantsChatScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        
+
         when {
             uiState.isInitializing -> {
                 InitializingScreen()
             }
-            
+
             uiState.needsFormatSelection -> {
                 FormatSelectionScreen(
                     uiState = uiState,
@@ -151,7 +150,7 @@ fun AssistantsChatScreen(
                     modifier = Modifier.padding(paddingValues)
                 )
             }
-            
+
             else -> {
                 ChatContent(
                     uiState = uiState,
@@ -161,7 +160,7 @@ fun AssistantsChatScreen(
                 )
             }
         }
-        
+
         // Dialogs
         if (uiState.showFormatDialog) {
             FormatSelectionDialog(
@@ -217,18 +216,18 @@ private fun FormatSelectionScreen(
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Text(
             text = "Выберите формат, в котором AI будет давать ответы",
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        
+
         Spacer(modifier = Modifier.height(32.dp))
-        
+
         FormatSelectionDialog(
             availableFormats = uiState.availableFormats,
             formatInput = uiState.formatInput,
@@ -260,7 +259,7 @@ private fun ChatContent(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
         }
-        
+
         // Messages list
         LazyColumn(
             modifier = Modifier
@@ -285,13 +284,13 @@ private fun ChatContent(
                     }
                 }
             }
-            
+
             items(uiState.messages) { message ->
                 MessageBubble(
                     message = message
                 )
             }
-            
+
             if (uiState.isSendingMessage) {
                 item {
                     LoadingIndicator(
@@ -302,7 +301,7 @@ private fun ChatContent(
                 }
             }
         }
-        
+
         // Message input
         MessageInput(
             value = uiState.messageInput,

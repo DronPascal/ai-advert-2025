@@ -8,7 +8,6 @@ import com.example.day1_ai_chat_nextgen.data.local.entity.ChatThreadEntity
 import com.example.day1_ai_chat_nextgen.data.local.entity.ResponseFormatEntity
 import com.example.day1_ai_chat_nextgen.data.remote.api.OpenAIAssistantsApi
 import com.example.day1_ai_chat_nextgen.data.remote.dto.AssistantDto
-import com.example.day1_ai_chat_nextgen.data.remote.dto.CreateRunRequestDto
 import com.example.day1_ai_chat_nextgen.data.remote.dto.MessageContentDto
 import com.example.day1_ai_chat_nextgen.data.remote.dto.MessageTextDto
 import com.example.day1_ai_chat_nextgen.data.remote.dto.MessagesResponseDto
@@ -22,9 +21,7 @@ import com.example.day1_ai_chat_nextgen.domain.model.Result
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
@@ -97,7 +94,12 @@ class AssistantsChatRepositoryImplTest : BehaviorSpec({
                 metadata = emptyMap()
             )
 
-            whenever(mockSharedPreferences.getString("assistant_id", null)).thenReturn("asst_existing")
+            whenever(
+                mockSharedPreferences.getString(
+                    "assistant_id",
+                    null
+                )
+            ).thenReturn("asst_existing")
             whenever(mockAssistantsApi.getAssistant("asst_existing"))
                 .thenReturn(Response.success(assistantDto))
 
@@ -221,7 +223,12 @@ class AssistantsChatRepositoryImplTest : BehaviorSpec({
             )
 
             whenever(mockSharedPreferences.getString("assistant_id", null)).thenReturn("asst_12345")
-            whenever(mockSharedPreferences.getString("current_thread_id", null)).thenReturn("local_thread_1")
+            whenever(
+                mockSharedPreferences.getString(
+                    "current_thread_id",
+                    null
+                )
+            ).thenReturn("local_thread_1")
             whenever(mockChatThreadDao.getThread("local_thread_1")).thenReturn(threadEntity)
             whenever(mockAssistantsApi.createMessage(eq("thread_12345"), any()))
                 .thenReturn(Response.success(threadMessageDto))
@@ -229,7 +236,15 @@ class AssistantsChatRepositoryImplTest : BehaviorSpec({
                 .thenReturn(Response.success(runDto))
             whenever(mockAssistantsApi.getRun("thread_12345", "run_12345"))
                 .thenReturn(Response.success(runDto))
-            whenever(mockAssistantsApi.getMessages(eq("thread_12345"), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull()))
+            whenever(
+                mockAssistantsApi.getMessages(
+                    eq("thread_12345"),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    anyOrNull()
+                )
+            )
                 .thenReturn(Response.success(messagesResponse))
 
             then("should send message and return AI response") {
