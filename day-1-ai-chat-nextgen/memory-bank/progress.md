@@ -8,6 +8,7 @@
 - Static analysis and dead code passes clean.
 - R8-based unused code report via `analyze` build type and `reportUnusedCode` task.
 - Architectural rules enforced by ArchUnit tests (no cycles; layered dependencies).
+ - Keyboard/IME behavior: `adjustResize` + IME-aware `LazyColumn` padding and autoscroll keep last message visible above the keyboard.
 
 ## What's Left
 - Fix intermittent format indicator visibility after New Thread.
@@ -20,7 +21,7 @@
 ## Current Status
 - Build and codegen: stable on AGP 8.9.2, Kotlin 2.1.10, KSP 2.1.10-1.0.30, Hilt 2.53.1.
 - Model: gpt-4o-mini per ADR-0009.
-- UX: Optimistic updates, instant dialog actions, system message dividers.
+- UX: Optimistic updates, instant dialog actions, system message dividers, compact input field, IME-safe chat.
 
 ## Known Issues
 - Format indicator sometimes disappears after New Thread (expected when format is reset; ensure UX copy clarifies and visibility rules are consistent).

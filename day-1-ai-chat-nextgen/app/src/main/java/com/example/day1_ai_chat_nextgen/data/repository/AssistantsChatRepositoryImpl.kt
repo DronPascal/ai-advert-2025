@@ -482,7 +482,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 responseFormatDao.getFormat(thread.activeFormatId)?.toDomain()
             } else null
 
-            val additionalInstructions = activeFormat?.instructions
+            val baseInstructions = ResponseFormat.getDefaultSystemInstructions()
+            val additionalInstructions = activeFormat?.instructions?.let { "$baseInstructions\n\n$it" } ?: baseInstructions
 
             // Create run
             val runResponse = assistantsApi.createRun(
@@ -490,7 +491,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 threadId = thread.threadId,
                 request = CreateRunRequestDto(
                     assistantId = assistantId,
-                    additionalInstructions = additionalInstructions
+                    additionalInstructions = additionalInstructions,
+                    temperature = 0.2
                 )
             )
 
