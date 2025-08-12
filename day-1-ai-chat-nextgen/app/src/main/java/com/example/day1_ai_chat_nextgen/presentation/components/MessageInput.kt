@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,14 +40,14 @@ fun MessageInput(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
@@ -67,7 +68,7 @@ fun MessageInput(
                     disabledTextColor = Color.Gray,
                     disabledBorderColor = Color.DarkGray
                 ),
-                maxLines = 3,
+                maxLines = 2,
                 enabled = enabled
             )
 
@@ -80,7 +81,7 @@ fun MessageInput(
                     containerColor = sendButtonColor,
                     disabledContainerColor = Color.Gray
                 ),
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(48.dp),
                 contentPadding = PaddingValues(0.dp)
             ) {
                 Icon(

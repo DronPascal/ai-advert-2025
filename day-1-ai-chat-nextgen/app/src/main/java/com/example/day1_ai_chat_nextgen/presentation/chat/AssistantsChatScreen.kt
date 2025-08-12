@@ -6,9 +6,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -34,8 +40,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -61,6 +69,14 @@ fun AssistantsChatScreen(
 
     // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(uiState.messages.size) {
+        if (uiState.messages.isNotEmpty()) {
+            listState.animateScrollToItem(uiState.messages.size - 1)
+        }
+    }
+
+    // Auto-scroll when IME appears/disappears to keep last message visible
+    val imeHeight = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
+    LaunchedEffect(imeHeight) {
         if (uiState.messages.isNotEmpty()) {
             listState.animateScrollToItem(uiState.messages.size - 1)
         }
@@ -266,7 +282,12 @@ private fun ChatContent(
                 .weight(1f)
                 .fillMaxWidth(),
             state = listState,
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = 16.dp,
+                bottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding() + 16.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (uiState.messages.isEmpty() && !uiState.isLoading) {
@@ -309,10 +330,7 @@ private fun ChatContent(
             onSendClick = { onEvent(ChatUiEvent.SendMessage) },
             enabled = uiState.canTypeMessage,
             canSend = uiState.canSendMessage,
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(16.dp)
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
