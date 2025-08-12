@@ -6,11 +6,15 @@
 - Predefined and custom response formats with persistence in Room.
 - Repository pattern with DI via Hilt; KSP codegen functional.
 - Static analysis and dead code passes clean.
+- R8-based unused code report via `analyze` build type and `reportUnusedCode` task.
+- Architectural rules enforced by ArchUnit tests (no cycles; layered dependencies).
 
 ## What's Left
 - Fix intermittent format indicator visibility after New Thread.
 - Optional: cap tokens for Assistants runs if required (e.g., ~150 completion tokens).
 - CI setup with quality gates (detekt/test/release assemble).
+- Optional: unused dependencies analysis (deferred).
+- Optional: CI job for `assembleAnalyze` + `reportUnusedCode` (deferred).
 - Production security hardening (pinning, encrypted key storage).
 
 ## Current Status
@@ -25,5 +29,7 @@
 - Hilt generation present under build/generated/ksp.
 - Room DAOs compile and run.
 - detekt: zero weighted issues.
+- `:app:assembleAnalyze` minifies with R8 `-printusage`.
+- `:app:reportUnusedCode` created `unused_code_report.md`.
 
 
