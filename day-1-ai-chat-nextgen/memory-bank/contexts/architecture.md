@@ -84,3 +84,10 @@ Presentation → Domain ← Data
 - **Error Pattern Consistency**: Standardized `expected: Exception` handling
 - **Architectural Suppressions**: Strategic @Suppress usage for design patterns
 - **Build Quality**: Conflict-free configuration, successful release builds
+ - **Architectural Tests**: Enforced with ArchUnit
+   - No package cycles across `com.example.day1_ai_chat_nextgen.(**)`
+   - Layered dependencies respected:
+     - Domain must not depend on Presentation or Data
+     - Presentation must not depend on Data
+     - Data must not depend on Presentation
+   - See: `app/src/test/java/com/example/day1_ai_chat_nextgen/architecture/ArchitectureTest.kt`

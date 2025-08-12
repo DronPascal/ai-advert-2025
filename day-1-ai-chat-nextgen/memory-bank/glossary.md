@@ -79,6 +79,12 @@
 **Coroutines**
 : Kotlin feature for asynchronous programming using suspend functions.
 
+**R8 (printusage)**
+: Android code shrinker. The `-printusage` option writes a list of classes/members removed by minification, which we parse to detect unused code.
+
+**ArchUnit**
+: Java/Kotlin testing library for asserting architectural rules (e.g., no package cycles, layered dependencies) in unit tests.
+
 ## Business Terms
 
 **OpenAI API**

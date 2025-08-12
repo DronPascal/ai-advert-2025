@@ -14,6 +14,12 @@ This memory bank contains project context, architectural decisions, and constrai
 
 ## Recent Updates
  
+### 12 August 2025 R8/ArchUnit Pipeline and Analysis
+- Introduced R8 `-printusage` analyze build and Gradle `reportUnusedCode` task
+- Added ArchUnit tests to enforce architectural rules (no cycles; layered dependencies)
+- Removed legacy analysis artifacts in favor of the new pipeline
+- Optional items (unused deps analysis, CI job) deferred
+
 ### 11 August 2025 Legacy Cleanup - Assistants-Only Implementation
 - Removed legacy Chat Completions fallback and UI
 - Updated DI, mappers, and manifest accordingly

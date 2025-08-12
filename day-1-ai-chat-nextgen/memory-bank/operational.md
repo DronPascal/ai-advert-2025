@@ -19,6 +19,11 @@
 # Run static analysis
 ./gradlew detekt
 
+# Unused code analysis (R8 printusage)
+./gradlew :app:assembleAnalyze
+./gradlew :app:reportUnusedCode
+# Output: day-1-ai-chat-nextgen/unused_code_report.md
+
 # Run with specific API key
 # Create or edit local.properties file
 echo "openai_api_key=your_actual_api_key_here" >> local.properties
@@ -42,6 +47,8 @@ echo "openai_api_key=your_actual_api_key_here" >> local.properties
 - [ ] All tests passing
 - [ ] **Detekt analysis passes: `./gradlew detekt`**
 - [ ] **No unused code detected**
+- [ ] **ArchUnit tests pass**
+- [ ] **R8 unused code report reviewed (Analyze build)**
 - [ ] APK size under 50MB
 - [ ] No sensitive data in logs
 
@@ -149,9 +156,12 @@ if (BuildConfig.IS_DEBUG_BUILD) {
 ## Backup and Recovery
 
 ### User Data
- - Room database stored in app's private directory
- - Android auto backup disabled (android:allowBackup=false)
+- Room database stored in app's private directory
+- Android auto backup disabled (android:allowBackup=false)
 - No cloud sync implemented (future enhancement)
+
+### Notes
+- The `analyze` build type is intended for analysis only and should not be shipped.
 
 ### Configuration
 - API keys in local.properties (developer responsibility)

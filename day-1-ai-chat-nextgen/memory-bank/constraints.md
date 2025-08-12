@@ -52,12 +52,13 @@
 - **Testing**: Minimum 80% unit test coverage for domain layer
 - **Documentation**: All public APIs must be documented
 - **Code Style**: Follow Kotlin coding conventions
-- **Git**: English commit messages mandatory
+- **Architecture Tests**: ArchUnit rules must pass (no package cycles; layered dependencies)
+- **Git**: English commit messages preferred; PR descriptions may be in Russian
 
 ### Build and Deployment
 - **Build Tool**: Gradle with KSP (no KAPT)
 - **CI/CD**: Ready for automated testing
-- **Variants**: Debug and Release build types
+- **Variants**: Debug, Release, and Analyze (Analyze is for R8 usage reporting and not for shipping)
 - **Signing**: Release signing configuration required
 
 ## External Dependencies

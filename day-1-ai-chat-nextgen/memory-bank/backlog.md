@@ -24,6 +24,8 @@
 
 ### Medium Priority
 - [ ] **CI/CD Pipeline** - Set up automated testing and deployment
+- [ ] **Unused Dependencies Analysis** - Add unused dependency detection (deferred)
+- [ ] **CI Job for Analyze/Report** - Run `assembleAnalyze` + `reportUnusedCode` in CI (deferred)
 - [ ] **Performance Monitoring** - Add analytics for app performance tracking
 - [ ] **Accessibility** - Improve screen reader support and navigation
 - [ ] **Dark Theme** - Implement proper Material 3 dark theme support
