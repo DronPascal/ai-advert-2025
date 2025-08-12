@@ -45,7 +45,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         private const val RUN_POLL_INTERVAL_MS = 1000L
         private const val RUN_TIMEOUT_MS = 30000L
         private const val HTTP_UNAUTHORIZED = 401
-        private const val HTTP_PAYMENT_REQUIRED = 402  
+        private const val HTTP_PAYMENT_REQUIRED = 402
         private const val HTTP_NOT_FOUND = 404
         private const val HTTP_TOO_MANY_REQUESTS = 429
     }
@@ -66,7 +66,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             chatMessageDao.clearAllMessages()
             chatThreadDao.clearAllThreads()
             sharedPreferences.edit().remove(PREF_CURRENT_THREAD_ID).apply()
-            
+
             // Add system message for history clear
             val clearMessage = ChatMessage(
                 id = UUID.randomUUID().toString(),
@@ -75,7 +75,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 timestamp = System.currentTimeMillis()
             )
             chatMessageDao.insertMessage(clearMessage.toEntity())
-            
+
             Result.Success(Unit)
         } catch (expected: Exception) {
             Result.Error(ChatError.UnknownError(expected.message ?: "Failed to clear history"))
@@ -119,6 +119,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                     }
                     (newThreadResult as Result.Success).data
                 }
+
                 is Result.Loading -> null // This shouldn't happen in this context
             }
 
@@ -136,7 +137,10 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             )
 
             if (!messageResponse.isSuccessful) {
-                return handleHttpError(messageResponse.code(), messageResponse.errorBody()?.string())
+                return handleHttpError(
+                    messageResponse.code(),
+                    messageResponse.errorBody()?.string()
+                )
             }
 
             // Save user message locally
@@ -163,7 +167,10 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             )
 
             if (!messagesResponse.isSuccessful) {
-                return handleHttpError(messagesResponse.code(), messagesResponse.errorBody()?.string())
+                return handleHttpError(
+                    messagesResponse.code(),
+                    messagesResponse.errorBody()?.string()
+                )
             }
 
             val latestMessages = messagesResponse.body()?.data?.toDomainMessages() ?: emptyList()
@@ -255,7 +262,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 val format = responseFormatDao.getFormat(id)
                 if (format != null) {
                     setActiveFormat(format.toDomain())
-                    
+
                     // Send format instruction message to the OpenAI thread
                     sendFormatInstructionMessage(chatThread, format.toDomain())
                 }
@@ -279,7 +286,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
 
             // Deactivate all threads
             chatThreadDao.deactivateAllThreads()
-            
+
             // Activate selected thread
             chatThreadDao.setThreadActive(threadId)
 
@@ -354,7 +361,11 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             Result.Success(Unit)
 
         } catch (expected: Exception) {
-            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to update thread format"))
+            Result.Error(
+                ChatError.UnknownError(
+                    expected.message ?: "Failed to update thread format"
+                )
+            )
         }
     }
 
@@ -381,7 +392,11 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             val formats = responseFormatDao.getPredefinedFormats().map { it.toDomain() }
             Result.Success(formats)
         } catch (expected: Exception) {
-            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to get predefined formats"))
+            Result.Error(
+                ChatError.UnknownError(
+                    expected.message ?: "Failed to get predefined formats"
+                )
+            )
         }
     }
 
@@ -395,14 +410,14 @@ class AssistantsChatRepositoryImpl @Inject constructor(
     override suspend fun getOrCreateAssistant(): Result<String> {
         return try {
             val savedAssistantId = sharedPreferences.getString(PREF_ASSISTANT_ID, null)
-            
+
             // Try to use saved assistant ID
             if (savedAssistantId != null) {
                 val assistantResponse = assistantsApi.getAssistant(
-    
+
                     assistantId = savedAssistantId
                 )
-                
+
                 if (assistantResponse.isSuccessful) {
                     return Result.Success(savedAssistantId)
                 }
@@ -435,7 +450,11 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         } catch (e: HttpException) {
             handleHttpError(e.code(), e.message())
         } catch (expected: Exception) {
-            Result.Error(ChatError.UnknownError(expected.message ?: "Failed to get or create assistant"))
+            Result.Error(
+                ChatError.UnknownError(
+                    expected.message ?: "Failed to get or create assistant"
+                )
+            )
         }
     }
 
@@ -453,7 +472,10 @@ class AssistantsChatRepositoryImpl @Inject constructor(
     }
 
     @Suppress("ReturnCount") // Result pattern requires multiple returns for error handling
-    private suspend fun createAndRunAssistant(thread: ChatThread, assistantId: String): Result<Unit> {
+    private suspend fun createAndRunAssistant(
+        thread: ChatThread,
+        assistantId: String
+    ): Result<Unit> {
         return try {
             // Get format instructions for the run
             val activeFormat = if (thread.activeFormatId != null) {
@@ -490,11 +512,11 @@ class AssistantsChatRepositoryImpl @Inject constructor(
     @Suppress("ReturnCount") // Polling pattern requires multiple returns for different states
     private suspend fun pollRunStatus(threadId: String, runId: String): Result<Unit> {
         val startTime = System.currentTimeMillis()
-        
+
         while (System.currentTimeMillis() - startTime < RUN_TIMEOUT_MS) {
             try {
                 val runResponse = assistantsApi.getRun(
-    
+
                     threadId = threadId,
                     runId = runId
                 )
@@ -511,11 +533,15 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                     "failed", "cancelled", "expired" -> {
                         return Result.Error(ChatError.RunFailed)
                     }
+
                     "requires_action" -> {
-                        return Result.Error(ChatError.RunRequiresAction(
-                            run.requiredAction ?: "Unknown action required"
-                        ))
+                        return Result.Error(
+                            ChatError.RunRequiresAction(
+                                run.requiredAction ?: "Unknown action required"
+                            )
+                        )
                     }
+
                     "in_progress", "queued" -> {
                         delay(RUN_POLL_INTERVAL_MS)
                         continue
@@ -525,7 +551,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 return Result.Error(ChatError.NetworkError)
             }
         }
-        
+
         return Result.Error(ChatError.RunTimeout)
     }
 
@@ -582,7 +608,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             HTTP_NOT_FOUND -> Result.Error(ChatError.AssistantNotFound)
             else -> {
                 val details = try {
-                    errorBody?.let { 
+                    errorBody?.let {
                         // Parse OpenAI error response if needed
                         it
                     } ?: "HTTP $code"

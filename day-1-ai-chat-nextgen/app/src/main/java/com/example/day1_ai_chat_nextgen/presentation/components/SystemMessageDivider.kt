@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +40,7 @@ fun SystemMessageDivider(
                 .height(1.dp),
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
         )
-        
+
         // System message badge
         Box(
             modifier = Modifier
@@ -70,7 +69,7 @@ fun SystemMessageDivider(
                 )
             }
         }
-        
+
         // Right divider line
         HorizontalDivider(
             modifier = Modifier

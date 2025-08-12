@@ -3,7 +3,6 @@ package com.example.day1_ai_chat_nextgen.data.mapper
 import com.example.day1_ai_chat_nextgen.data.remote.dto.ThreadMessageDto
 import com.example.day1_ai_chat_nextgen.domain.model.ChatMessage
 import com.example.day1_ai_chat_nextgen.domain.model.MessageRole
-import java.util.UUID
 
 fun ThreadMessageDto.toDomain(): ChatMessage {
     val messageContent = content.firstOrNull()?.text?.value ?: ""
@@ -13,7 +12,7 @@ fun ThreadMessageDto.toDomain(): ChatMessage {
         "system" -> MessageRole.SYSTEM
         else -> MessageRole.USER
     }
-    
+
     return ChatMessage(
         id = id,
         content = messageContent,

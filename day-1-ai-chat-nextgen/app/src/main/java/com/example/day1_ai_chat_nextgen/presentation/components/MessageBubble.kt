@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -44,6 +43,7 @@ fun MessageBubble(
                 modifier = modifier
             )
         }
+
         else -> {
             Row(
                 modifier = modifier.fillMaxWidth(),
@@ -90,12 +90,15 @@ fun MessageBubble(
 private fun parseSystemMessage(content: String): Pair<String, String> {
     return when {
         content.contains("Формат ответов обновлен", ignoreCase = true) ||
-        content.contains("формат", ignoreCase = true) -> "🔄" to content
+                content.contains("формат", ignoreCase = true) -> "🔄" to content
+
         content.contains("Новая беседа", ignoreCase = true) ||
-        content.contains("новый тред", ignoreCase = true) ||
-        content.contains("new thread", ignoreCase = true) -> "✨" to content
+                content.contains("новый тред", ignoreCase = true) ||
+                content.contains("new thread", ignoreCase = true) -> "✨" to content
+
         content.contains("Беседа очищена", ignoreCase = true) ||
-        content.contains("История очищена", ignoreCase = true) -> "🗑️" to content
+                content.contains("История очищена", ignoreCase = true) -> "🗑️" to content
+
         else -> "ℹ️" to content
     }
 }

@@ -51,7 +51,7 @@ fun FormatIndicator(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                 )
-                
+
                 Text(
                     text = activeFormat?.name ?: "Не выбран",
                     style = MaterialTheme.typography.bodyMedium,
@@ -60,7 +60,7 @@ fun FormatIndicator(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                
+
                 if (activeFormat != null) {
                     Text(
                         text = activeFormat.description,
@@ -71,9 +71,9 @@ fun FormatIndicator(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.width(8.dp))
-            
+
             IconButton(
                 onClick = onFormatSettingsClick
             ) {

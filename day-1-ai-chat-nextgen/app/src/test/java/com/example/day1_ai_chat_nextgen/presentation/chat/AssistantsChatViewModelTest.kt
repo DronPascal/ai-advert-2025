@@ -8,24 +8,23 @@ import com.example.day1_ai_chat_nextgen.domain.model.Result
 import com.example.day1_ai_chat_nextgen.domain.repository.ChatRepository
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import kotlinx.coroutines.Dispatchers
 
 class AssistantsChatViewModelTest : BehaviorSpec({
 
     given("AssistantsChatViewModel") {
         val testDispatcher = StandardTestDispatcher()
         Dispatchers.setMain(testDispatcher)
-        
+
         val mockRepository = mock<ChatRepository>()
-        
+
         // Default successful responses for initialization
         whenever(mockRepository.initializePredefinedFormats()).thenReturn(Result.Success(Unit))
         whenever(mockRepository.getOrCreateAssistant()).thenReturn(Result.Success("asst_12345"))
@@ -43,7 +42,7 @@ class AssistantsChatViewModelTest : BehaviorSpec({
                 activeFormatId = "format_1",
                 title = "Existing Chat"
             )
-            
+
             whenever(mockRepository.getCurrentThread()).thenReturn(Result.Success(existingThread))
 
             then("should set current thread and start observing data") {
@@ -54,7 +53,7 @@ class AssistantsChatViewModelTest : BehaviorSpec({
                     viewModel.uiState.value.currentThread shouldBe existingThread
                     viewModel.uiState.value.isInitializing shouldBe false
                     viewModel.uiState.value.needsFormatSelection shouldBe false
-                    
+
                     verify(mockRepository).initializePredefinedFormats()
                     verify(mockRepository).getOrCreateAssistant()
                     verify(mockRepository).getCurrentThread()
@@ -65,7 +64,11 @@ class AssistantsChatViewModelTest : BehaviorSpec({
         `when`("initializing without existing thread") {
             whenever(mockRepository.getCurrentThread()).thenReturn(Result.Success(null))
             val predefinedFormats = ResponseFormat.PREDEFINED_FORMATS
-            whenever(mockRepository.getPredefinedFormats()).thenReturn(Result.Success(predefinedFormats))
+            whenever(mockRepository.getPredefinedFormats()).thenReturn(
+                Result.Success(
+                    predefinedFormats
+                )
+            )
 
             then("should show format selection") {
                 runTest {
@@ -83,11 +86,11 @@ class AssistantsChatViewModelTest : BehaviorSpec({
         `when`("sending message successfully") {
             val existingThread = ChatThread(
                 id = "thread_1",
-                threadId = "thread_openai_1", 
+                threadId = "thread_openai_1",
                 assistantId = "asst_12345",
                 activeFormatId = null
             )
-            
+
             val assistantMessage = ChatMessage(
                 id = "msg_1",
                 content = "Hello! How can I help you?",
@@ -113,7 +116,7 @@ class AssistantsChatViewModelTest : BehaviorSpec({
                     viewModel.uiState.value.messageInput shouldBe ""
                     viewModel.uiState.value.isSendingMessage shouldBe false
                     viewModel.uiState.value.error shouldBe null
-                    
+
                     verify(mockRepository).sendMessage("Hello")
                 }
             }
@@ -127,7 +130,7 @@ class AssistantsChatViewModelTest : BehaviorSpec({
                 instructions = "Always respond in JSON",
                 isCustom = false
             )
-            
+
             val newThread = ChatThread(
                 id = "thread_new",
                 threadId = "thread_openai_new",
@@ -136,7 +139,11 @@ class AssistantsChatViewModelTest : BehaviorSpec({
             )
 
             whenever(mockRepository.setResponseFormat(format)).thenReturn(Result.Success(format))
-            whenever(mockRepository.createNewThread("format_json")).thenReturn(Result.Success(newThread))
+            whenever(mockRepository.createNewThread("format_json")).thenReturn(
+                Result.Success(
+                    newThread
+                )
+            )
 
             then("should set format and create new thread") {
                 runTest {
@@ -149,7 +156,7 @@ class AssistantsChatViewModelTest : BehaviorSpec({
                     viewModel.uiState.value.currentThread shouldBe newThread
                     viewModel.uiState.value.needsFormatSelection shouldBe false
                     viewModel.uiState.value.isSettingFormat shouldBe false
-                    
+
                     verify(mockRepository).setResponseFormat(format)
                     verify(mockRepository).createNewThread("format_json")
                 }
@@ -161,13 +168,21 @@ class AssistantsChatViewModelTest : BehaviorSpec({
             val customFormat = ResponseFormat.createCustomFormat(customInstructions)
             val newThread = ChatThread(
                 id = "thread_custom",
-                threadId = "thread_openai_custom", 
+                threadId = "thread_openai_custom",
                 assistantId = "asst_12345",
                 activeFormatId = customFormat.id
             )
 
-            whenever(mockRepository.setResponseFormat(customInstructions)).thenReturn(Result.Success(customFormat))
-            whenever(mockRepository.createNewThread(customFormat.id)).thenReturn(Result.Success(newThread))
+            whenever(mockRepository.setResponseFormat(customInstructions)).thenReturn(
+                Result.Success(
+                    customFormat
+                )
+            )
+            whenever(mockRepository.createNewThread(customFormat.id)).thenReturn(
+                Result.Success(
+                    newThread
+                )
+            )
 
             then("should create custom format and new thread") {
                 runTest {
@@ -180,7 +195,7 @@ class AssistantsChatViewModelTest : BehaviorSpec({
                     viewModel.uiState.value.currentThread shouldBe newThread
                     viewModel.uiState.value.needsFormatSelection shouldBe false
                     viewModel.uiState.value.isSettingFormat shouldBe false
-                    
+
                     verify(mockRepository).setResponseFormat(customInstructions)
                     verify(mockRepository).createNewThread(customFormat.id)
                 }
@@ -208,7 +223,7 @@ class AssistantsChatViewModelTest : BehaviorSpec({
                     viewModel.uiState.value.currentThread shouldBe newThread
                     viewModel.uiState.value.isCreatingThread shouldBe false
                     viewModel.uiState.value.showThreadDialog shouldBe false
-                    
+
                     verify(mockRepository).createNewThread(null)
                 }
             }
@@ -223,7 +238,11 @@ class AssistantsChatViewModelTest : BehaviorSpec({
                 title = "Target Thread"
             )
 
-            whenever(mockRepository.switchToThread("thread_target")).thenReturn(Result.Success(targetThread))
+            whenever(mockRepository.switchToThread("thread_target")).thenReturn(
+                Result.Success(
+                    targetThread
+                )
+            )
 
             then("should switch to target thread") {
                 runTest {
@@ -235,7 +254,7 @@ class AssistantsChatViewModelTest : BehaviorSpec({
 
                     viewModel.uiState.value.currentThread shouldBe targetThread
                     viewModel.uiState.value.showThreadDialog shouldBe false
-                    
+
                     verify(mockRepository).switchToThread("thread_target")
                 }
             }
@@ -244,7 +263,11 @@ class AssistantsChatViewModelTest : BehaviorSpec({
         `when`("clearing history") {
             whenever(mockRepository.clearHistory()).thenReturn(Result.Success(Unit))
             val predefinedFormats = ResponseFormat.PREDEFINED_FORMATS
-            whenever(mockRepository.getPredefinedFormats()).thenReturn(Result.Success(predefinedFormats))
+            whenever(mockRepository.getPredefinedFormats()).thenReturn(
+                Result.Success(
+                    predefinedFormats
+                )
+            )
 
             then("should clear history and show format selection") {
                 runTest {
@@ -257,7 +280,7 @@ class AssistantsChatViewModelTest : BehaviorSpec({
                     viewModel.uiState.value.currentThread shouldBe null
                     viewModel.uiState.value.needsFormatSelection shouldBe true
                     viewModel.uiState.value.error shouldBe null
-                    
+
                     verify(mockRepository).clearHistory()
                 }
             }
@@ -284,7 +307,7 @@ class AssistantsChatViewModelTest : BehaviorSpec({
                     viewModel.uiState.value.currentThread shouldBe simpleThread
                     viewModel.uiState.value.needsFormatSelection shouldBe false
                     viewModel.uiState.value.isCreatingThread shouldBe false
-                    
+
                     verify(mockRepository).createNewThread()
                 }
             }
@@ -342,7 +365,7 @@ class AssistantsChatViewModelTest : BehaviorSpec({
 
                     // Set an error first
                     viewModel.uiState.value.copy(error = "Test error")
-                    
+
                     viewModel.onEvent(ChatUiEvent.DismissError)
                     viewModel.uiState.value.error shouldBe null
                 }

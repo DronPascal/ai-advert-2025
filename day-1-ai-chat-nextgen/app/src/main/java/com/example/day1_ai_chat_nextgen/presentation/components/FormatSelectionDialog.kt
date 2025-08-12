@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -69,15 +68,15 @@ fun FormatSelectionDialog(
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
-                
+
                 Text(
                     text = "AI будет отвечать в выбранном формате",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 TabRow(selectedTabIndex = selectedTab) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
@@ -87,15 +86,16 @@ fun FormatSelectionDialog(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 when (selectedTab) {
                     0 -> PredefinedFormatsTab(
                         formats = availableFormats.filter { !it.isCustom },
                         onSelectFormat = onSelectPredefinedFormat,
                         isLoading = isSettingFormat
                     )
+
                     1 -> CustomFormatTab(
                         formatInput = formatInput,
                         onFormatInputChanged = onFormatInputChanged,
@@ -103,9 +103,9 @@ fun FormatSelectionDialog(
                         isLoading = isSettingFormat
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -116,9 +116,9 @@ fun FormatSelectionDialog(
                     ) {
                         Text("Пропустить")
                     }
-                    
+
                     Spacer(modifier = Modifier.weight(1f))
-                    
+
                     OutlinedButton(
                         onClick = onDismiss,
                         enabled = !isSettingFormat
@@ -163,9 +163,9 @@ private fun CustomFormatTab(
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         OutlinedTextField(
             value = formatInput,
             onValueChange = onFormatInputChanged,
@@ -177,9 +177,9 @@ private fun CustomFormatTab(
             },
             enabled = !isLoading
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Button(
             onClick = { onSetFormat(formatInput) },
             modifier = Modifier.fillMaxWidth(),
@@ -201,9 +201,9 @@ private fun FormatCard(
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = if (enabled) 
-                MaterialTheme.colorScheme.surfaceVariant 
-            else 
+            containerColor = if (enabled)
+                MaterialTheme.colorScheme.surfaceVariant
+            else
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
         enabled = enabled
@@ -216,17 +216,17 @@ private fun FormatCard(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            
+
             Spacer(modifier = Modifier.height(4.dp))
-            
+
             Text(
                 text = format.description,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = format.instructions,
                 style = MaterialTheme.typography.bodySmall,

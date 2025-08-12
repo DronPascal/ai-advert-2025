@@ -8,7 +8,7 @@ sealed class ChatError : Exception() {
     data object InsufficientCredits : ChatError()
     data object ModelNotAvailable : ChatError()
     data object ContentFiltered : ChatError()
-    
+
     // Assistants API specific errors
     data object AssistantNotFound : ChatError()
     data object ThreadNotFound : ChatError()
@@ -17,10 +17,10 @@ sealed class ChatError : Exception() {
     data object RunCancelled : ChatError()
     data class RunRequiresAction(val requiredAction: String) : ChatError()
     data object FormatNotSet : ChatError()
-    
+
     data class ApiError(val code: Int, val details: String) : ChatError()
     data class UnknownError(val details: String) : ChatError()
-    
+
     override val message: String
         get() = when (this) {
             NetworkError -> "Network connection error. Please check your internet connection."

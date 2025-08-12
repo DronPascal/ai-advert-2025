@@ -32,18 +32,18 @@ data class ChatThread(
             )
         }
     }
-    
+
     fun withUpdatedActivity(): ChatThread {
         return copy(
             lastMessageAt = System.currentTimeMillis(),
             messageCount = messageCount + 1
         )
     }
-    
+
     fun withFormat(formatId: String?): ChatThread {
         return copy(activeFormatId = formatId)
     }
-    
+
     fun withTitle(newTitle: String): ChatThread {
         return copy(title = newTitle)
     }
