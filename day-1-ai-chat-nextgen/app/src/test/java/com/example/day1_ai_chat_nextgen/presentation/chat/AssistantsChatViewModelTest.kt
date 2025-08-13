@@ -91,14 +91,8 @@ class AssistantsChatViewModelTest : BehaviorSpec({
                 activeFormatId = null
             )
 
-            val assistantMessage = ChatMessage(
-                id = "msg_1",
-                content = "Hello! How can I help you?",
-                role = MessageRole.ASSISTANT
-            )
-
             whenever(mockRepository.getCurrentThread()).thenReturn(Result.Success(existingThread))
-            whenever(mockRepository.sendMessage("Hello")).thenReturn(Result.Success(assistantMessage))
+            whenever(mockRepository.sendMessageDualAgents("Hello")).thenReturn(Result.Success(Unit))
 
             then("should send message and clear input") {
                 runTest {
@@ -117,7 +111,7 @@ class AssistantsChatViewModelTest : BehaviorSpec({
                     viewModel.uiState.value.isSendingMessage shouldBe false
                     viewModel.uiState.value.error shouldBe null
 
-                    verify(mockRepository).sendMessage("Hello")
+                    verify(mockRepository).sendMessageDualAgents("Hello")
                 }
             }
         }

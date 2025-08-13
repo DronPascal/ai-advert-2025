@@ -42,6 +42,10 @@ class AssistantsChatRepositoryImpl @Inject constructor(
     companion object {
         private const val PREF_ASSISTANT_ID = "assistant_id"
         private const val PREF_CURRENT_THREAD_ID = "current_thread_id"
+        private const val PREF_ASSISTANT1_ID = "assistant1_id"
+        private const val PREF_ASSISTANT2_ID = "assistant2_id"
+        private const val PREF_AGENT1_THREAD_ID = "agent1_thread_id"
+        private const val PREF_AGENT2_THREAD_ID = "agent2_thread_id"
         private const val RUN_POLL_INTERVAL_MS = 1000L
         private const val RUN_TIMEOUT_MS = 30000L
         private const val HTTP_UNAUTHORIZED = 401
@@ -191,6 +195,167 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             handleHttpError(e.code(), e.message())
         } catch (expected: Exception) {
             Result.Error(ChatError.UnknownError(expected.message ?: "Unknown error occurred"))
+        }
+    }
+
+    override suspend fun sendMessageDualAgents(content: String): Result<Unit> {
+        return try {
+            if (BuildConfig.OPENAI_API_KEY.isBlank()) {
+                return Result.Error(ChatError.ApiKeyMissing)
+            }
+
+            // Ensure Agent 1 assistant and thread
+            val agent1AssistantIdResult = ensureAgentAssistant(
+                agentIndex = 1,
+                name = "Agent 1 — Planner",
+                instructions = com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.AGENT_1_SYSTEM_PROMPT
+            )
+            val agent1AssistantId = when (agent1AssistantIdResult) {
+                is Result.Success -> agent1AssistantIdResult.data
+                is Result.Error -> return Result.Error(agent1AssistantIdResult.exception)
+                is Result.Loading -> return Result.Error(ChatError.UnknownError("Unexpected loading state"))
+            }
+
+            val agent1ThreadResult = ensureAgentThread(agentIndex = 1, assistantId = agent1AssistantId)
+            val agent1Thread = when (agent1ThreadResult) {
+                is Result.Success -> agent1ThreadResult.data
+                is Result.Error -> return Result.Error(agent1ThreadResult.exception)
+                is Result.Loading -> return Result.Error(ChatError.UnknownError("Unexpected loading state"))
+            }
+
+            // Post user message to Agent 1
+            val messageResponse = assistantsApi.createMessage(
+                threadId = agent1Thread.threadId,
+                request = CreateMessageRequestDto(role = "user", content = content)
+            )
+            if (!messageResponse.isSuccessful) {
+                return handleHttpError(messageResponse.code(), messageResponse.errorBody()?.string())
+            }
+
+            // Save user message locally immediately for stable UI (optimistic persisted)
+            val userMessageLocal = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                content = content,
+                role = MessageRole.USER,
+                timestamp = System.currentTimeMillis()
+            )
+            chatMessageDao.insertMessage(userMessageLocal.toEntity())
+            chatThreadDao.updateThreadActivity(agent1Thread.id, System.currentTimeMillis())
+
+            // Run Agent 1
+            val runResponse = assistantsApi.createRun(
+                threadId = agent1Thread.threadId,
+                request = CreateRunRequestDto(
+                    assistantId = agent1AssistantId,
+                    temperature = 0.2
+                )
+            )
+            if (!runResponse.isSuccessful) {
+                return handleHttpError(runResponse.code(), runResponse.errorBody()?.string())
+            }
+            val run = runResponse.body() ?: return Result.Error(ChatError.UnknownError("Empty run response"))
+            val pollResult = pollRunStatus(agent1Thread.threadId, run.id)
+            if (pollResult is Result.Error) return Result.Error(pollResult.exception)
+
+            // Fetch latest assistant message from Agent 1
+            val latestResponse = assistantsApi.getMessages(
+                threadId = agent1Thread.threadId,
+                limit = 1,
+                order = "desc"
+            )
+            if (!latestResponse.isSuccessful) {
+                return handleHttpError(latestResponse.code(), latestResponse.errorBody()?.string())
+            }
+            val lastAssistant = latestResponse.body()?.data?.toDomainMessages()?.firstOrNull()
+                ?: return Result.Error(ChatError.UnknownError("No message returned from Agent 1"))
+
+            // Save Agent1 assistant message locally (strip HANDOFF header from persisted text)
+            val possiblyStripped = stripHandoffHeader(lastAssistant.content)
+            val persistedA1 = lastAssistant.copy(content = possiblyStripped)
+            chatMessageDao.insertMessage(persistedA1.toEntity())
+
+            // Divider: Agent 1 → handoff
+            if (com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.extractPayloadForAgent2(lastAssistant.content) != null) {
+                insertSystemDivider("Передача сообщения во 2-го агента")
+            }
+
+            // If no handoff, finish
+            val payload = com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.extractPayloadForAgent2(lastAssistant.content)
+            if (payload == null) {
+                chatThreadDao.updateThreadActivity(agent1Thread.id, System.currentTimeMillis())
+                return Result.Success(Unit)
+            }
+
+            // Ensure Agent 2 assistant and thread
+            val agent2AssistantIdResult = ensureAgentAssistant(
+                agentIndex = 2,
+                name = "Agent 2 — Clown Rewriter",
+                instructions = com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.AGENT_2_SYSTEM_PROMPT
+            )
+            val agent2AssistantId = when (agent2AssistantIdResult) {
+                is Result.Success -> agent2AssistantIdResult.data
+                is Result.Error -> return Result.Error(agent2AssistantIdResult.exception)
+                is Result.Loading -> return Result.Error(ChatError.UnknownError("Unexpected loading state"))
+            }
+            val agent2ThreadResult = ensureAgentThread(agentIndex = 2, assistantId = agent2AssistantId)
+            val agent2Thread = when (agent2ThreadResult) {
+                is Result.Success -> agent2ThreadResult.data
+                is Result.Error -> return Result.Error(agent2ThreadResult.exception)
+                is Result.Loading -> return Result.Error(ChatError.UnknownError("Unexpected loading state"))
+            }
+
+            // Agent 2 receives payload as-is
+            val a2MessageResponse = assistantsApi.createMessage(
+                threadId = agent2Thread.threadId,
+                request = CreateMessageRequestDto(role = "user", content = payload)
+            )
+            if (!a2MessageResponse.isSuccessful) {
+                return handleHttpError(a2MessageResponse.code(), a2MessageResponse.errorBody()?.string())
+            }
+
+            // Divider immediately when Agent 2 receives the payload (before Agent 2 reply)
+            insertSystemDivider("Сообщение принято агентом 2")
+
+            val a2RunResponse = assistantsApi.createRun(
+                threadId = agent2Thread.threadId,
+                request = CreateRunRequestDto(
+                    assistantId = agent2AssistantId,
+                    temperature = 0.2
+                )
+            )
+            if (!a2RunResponse.isSuccessful) {
+                return handleHttpError(a2RunResponse.code(), a2RunResponse.errorBody()?.string())
+            }
+            val a2Run = a2RunResponse.body() ?: return Result.Error(ChatError.UnknownError("Empty run response (Agent2)"))
+            val a2Poll = pollRunStatus(agent2Thread.threadId, a2Run.id)
+            if (a2Poll is Result.Error) return Result.Error(a2Poll.exception)
+
+            val a2Latest = assistantsApi.getMessages(
+                threadId = agent2Thread.threadId,
+                limit = 1,
+                order = "desc"
+            )
+            if (!a2Latest.isSuccessful) {
+                return handleHttpError(a2Latest.code(), a2Latest.errorBody()?.string())
+            }
+            val a2Reply = a2Latest.body()?.data?.toDomainMessages()?.firstOrNull()
+                ?: return Result.Error(ChatError.UnknownError("No message returned from Agent 2"))
+
+            // Persist Agent 2 reply
+            chatMessageDao.insertMessage(a2Reply.toEntity())
+
+            // Update activity on both threads
+            val now = System.currentTimeMillis()
+            chatThreadDao.updateThreadActivity(agent1Thread.id, now)
+            chatThreadDao.updateThreadActivity(agent2Thread.id, now)
+
+            Result.Success(Unit)
+        } catch (e: IOException) {
+            Result.Error(ChatError.NetworkError)
+        } catch (e: HttpException) {
+            handleHttpError(e.code(), e.message())
+        } catch (expected: Exception) {
+            Result.Error(ChatError.UnknownError(expected.message ?: "Unknown error"))
         }
     }
 
@@ -555,6 +720,62 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         }
 
         return Result.Error(ChatError.RunTimeout)
+    }
+
+    private fun stripHandoffHeader(text: String): String {
+        val lines = text.trim().lines()
+        if (lines.isEmpty()) return text
+        return if (lines.first().trim() == com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.HANDOFF_PREFIX) {
+            lines.drop(1).joinToString("\n").trim()
+        } else text
+    }
+
+    private suspend fun insertSystemDivider(message: String) {
+        val systemMessage = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            content = message, // icon is inferred by UI parser
+            role = MessageRole.SYSTEM,
+            timestamp = System.currentTimeMillis()
+        )
+        chatMessageDao.insertMessage(systemMessage.toEntity())
+    }
+
+    private suspend fun ensureAgentAssistant(
+        agentIndex: Int,
+        name: String,
+        instructions: String
+    ): Result<String> {
+        val key = if (agentIndex == 1) PREF_ASSISTANT1_ID else PREF_ASSISTANT2_ID
+        val saved = sharedPreferences.getString(key, null)
+        if (saved != null) {
+            val resp = assistantsApi.getAssistant(saved)
+            if (resp.isSuccessful) return Result.Success(saved)
+        }
+        val created = assistantsApi.createAssistant(
+            request = CreateAssistantRequestDto(
+                name = name,
+                instructions = instructions
+            )
+        )
+        if (!created.isSuccessful) return handleHttpError(created.code(), created.errorBody()?.string())
+        val assistant = created.body() ?: return Result.Error(ChatError.UnknownError("Empty assistant"))
+        sharedPreferences.edit().putString(key, assistant.id).apply()
+        return Result.Success(assistant.id)
+    }
+
+    private suspend fun ensureAgentThread(agentIndex: Int, assistantId: String): Result<ChatThread> {
+        val key = if (agentIndex == 1) PREF_AGENT1_THREAD_ID else PREF_AGENT2_THREAD_ID
+        val savedLocalId = sharedPreferences.getString(key, null)
+        val existing = if (savedLocalId != null) chatThreadDao.getThread(savedLocalId) else null
+        if (existing != null) return Result.Success(existing.toDomain())
+
+        val threadResp = assistantsApi.createThread(CreateThreadRequestDto())
+        if (!threadResp.isSuccessful) return handleHttpError(threadResp.code(), threadResp.errorBody()?.string())
+        val openAiThread = threadResp.body() ?: return Result.Error(ChatError.UnknownError("Empty thread"))
+        val chatThread = ChatThread.create(threadId = openAiThread.id, assistantId = assistantId)
+        chatThreadDao.insertThread(chatThread.toEntity())
+        sharedPreferences.edit().putString(key, chatThread.id).apply()
+        return Result.Success(chatThread)
     }
 
     private suspend fun setActiveFormat(format: ResponseFormat) {

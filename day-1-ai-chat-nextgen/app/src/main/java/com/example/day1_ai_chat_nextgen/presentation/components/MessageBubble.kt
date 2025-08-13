@@ -99,6 +99,10 @@ private fun parseSystemMessage(content: String): Pair<String, String> {
         content.contains("Беседа очищена", ignoreCase = true) ||
                 content.contains("История очищена", ignoreCase = true) -> "🗑️" to content
 
+        // Dual agents orchestration badges
+        content.contains("Передача сообщения во 2-го агента", ignoreCase = true) -> "🔄" to content
+        content.contains("Сообщение принято агентом 2", ignoreCase = true) -> "✨" to content
+
         else -> "ℹ️" to content
     }
 }
