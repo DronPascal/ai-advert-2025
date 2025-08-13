@@ -15,6 +15,7 @@ interface ChatRepository {
 
     // New Assistants API functions
     suspend fun sendMessage(content: String): Result<ChatMessage>
+    suspend fun sendMessageDualAgents(content: String): Result<Unit>
     suspend fun getCurrentThread(): Result<ChatThread?>
     suspend fun createNewThread(formatId: String? = null): Result<ChatThread>
     suspend fun switchToThread(threadId: String): Result<ChatThread>
