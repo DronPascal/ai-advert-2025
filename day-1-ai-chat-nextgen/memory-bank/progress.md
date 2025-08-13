@@ -9,9 +9,13 @@
 - R8-based unused code report via `analyze` build type and `reportUnusedCode` task.
 - Architectural rules enforced by ArchUnit tests (no cycles; layered dependencies).
  - Keyboard/IME behavior: `adjustResize` + IME-aware `LazyColumn` padding and autoscroll keep last message visible above the keyboard.
+ - Dual Agents MVP: two Assistants + two Threads with automatic handoff (Agent1→payload→Agent2)
+ - System badges: "Передача сообщения во 2-го агента" and "Сообщение принято агентом 2" (до ответа А2)
+ - Immediate local persistence of user message to prevent disappearance on refresh
 
 ## What's Left
 - Fix intermittent format indicator visibility after New Thread.
+ - UI toggle for dual-agents mode; separate reset for Agent 1/2 threads; optional side-by-side payload vs rewritten
 - Optional: cap tokens for Assistants runs if required (e.g., ~150 completion tokens).
 - CI setup with quality gates (detekt/test/release assemble).
 - Optional: unused dependencies analysis (deferred).
