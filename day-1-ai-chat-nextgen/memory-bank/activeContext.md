@@ -1,11 +1,18 @@
 # Active Context - AI Chat NextGen
 
 ## Current Focus
-- Assistants API is the only flow; legacy Chat Completions removed.
-- Response format management is thread-aware: update format within the current thread when possible; reset on new thread.
-- UI polish: IME/keyboard behavior and compact input field; occasional visibility issues with the format indicator after New Thread.
+- Assistants API only; dual-agents orchestration (two assistants & threads) with automatic handoff
+- Response format: thread-aware updates and resets on new thread
+- Observability: system dividers for agent handoff and acceptance; stable message persistence
+- UI polish: IME-aware chat and compact input; format indicator visibility after New Thread
 
 ## Recent Changes
+- Dual agents MVP implemented:
+  - Added `AgentPrompts` with AGENT_1/2 system prompts and `HANDOFF_AGENT2` detector
+  - Repository method `sendMessageDualAgents` orchestrates Agent1→(payload)→Agent2
+  - System dividers: "Передача сообщения во 2-го агента" and "Сообщение принято агентом 2"
+  - Badge "принято агентом 2" отображается до ответа агента 2
+  - Persist user message immediately after sending to Agent 1 for stable UI
 - Adopted gpt-4o-mini as the default model for Assistants (see ADR-0009) to reduce latency and cost.
 - Centralized API authentication via OkHttp interceptor (no manual header wiring).
 - System message dividers added for key events (format updates, new thread, history clear).
@@ -18,6 +25,9 @@
 - Legacy analysis artifacts replaced by the new pipeline (removed `FINAL_UNUSED_CODE_ANALYSIS.md`, `REFACTORING_SUMMARY.md`, `scripts/find_unused_code.py`).
 
 ## Next Steps
+- UI toggle for enabling/disabling dual-agents mode (MVP: always on)
+- Separate reset actions for Agent 1 and Agent 2 threads
+- Optional side-by-side display (payload vs Agent 2 rewritten)
 - Fix format indicator visibility edge case after New Thread.
 - Optionally set conservative token caps on Assistants runs (e.g., max_completion_tokens ~150) if required by ops policy.
 - CI/CD: integrate detekt, unit tests, assembleRelease gates. Optional: add `assembleAnalyze` + `reportUnusedCode` to CI later (deferred).
@@ -34,6 +44,8 @@
 - ArchUnit: architecture tests pass (no cycles, layered dependencies).
 - Codegen: Hilt + KSP + Room generation verified with correct plugin declaration at root.
 - Static analysis: detekt target zero weighted issues; OK.
- - UI: Manual verification on device — keyboard no longer pushes whole layout; messages area compresses and last item remains visible.
+ - UI: Manual verification
+   - keyboard no longer pushes whole layout; messages area compresses and last item remains visible
+   - dual-agents handoff works; acceptance badge shows before Agent 2 reply; user message persists immediately
 
 

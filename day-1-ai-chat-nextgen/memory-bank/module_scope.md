@@ -19,6 +19,7 @@
  - **Business Logic**: Domain models and repository interface; no use case layer in current implementation
 - **Data Access**: Room database + Retrofit for OpenAI API
 - **Dependency Injection**: Hilt for IoC container
+ - **Agent Orchestration**: Dual-agents handoff (two assistants/threads) with explicit HANDOFF signaling and system dividers
 
 ## What's Included
 ✅ Clean Architecture implementation (Domain/Data/Presentation)  

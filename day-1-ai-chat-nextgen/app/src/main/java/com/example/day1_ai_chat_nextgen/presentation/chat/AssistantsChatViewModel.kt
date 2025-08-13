@@ -275,7 +275,9 @@ class AssistantsChatViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            when (val result = chatRepository.sendMessage(messageToSend)) {
+            // MVP: dual agents mode always on for demonstration
+            val result = chatRepository.sendMessageDualAgents(messageToSend)
+            when (result) {
                 is Result.Loading -> {
                     _uiState.update { it.copy(isSendingMessage = true) }
                 }

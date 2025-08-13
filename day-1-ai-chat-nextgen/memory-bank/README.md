@@ -14,6 +14,16 @@ This memory bank contains project context, architectural decisions, and constrai
 
 ## Recent Updates
  
+### 13 August 2025 Dual Agents Handoff and Observability
+- Implemented dual-agents orchestration using two Assistants and two Threads (Agent 1 → handoff → Agent 2)
+- Added system prompts: Agent 1 (Planner & Clarifier with HANDOFF rule), Agent 2 (Clown Style Rewriter)
+- Introduced HANDOFF detector (first line equals HANDOFF_AGENT2); payload forwarded as-is to Agent 2
+- Added observable system dividers in chat:
+  - "Передача сообщения во 2-го агента" (shown when handoff detected)
+  - "Сообщение принято агентом 2" (shown immediately after Agent 2 receives payload, before its reply)
+- Fixed stability: persist user message locally right after sending to Agent 1 to avoid disappearance on refresh
+- ViewModel switched to dual-agents send flow (MVP always-on)
+
 ### 12 August 2025 R8/ArchUnit Pipeline and Analysis
 - Introduced R8 `-printusage` analyze build and Gradle `reportUnusedCode` task
 - Added ArchUnit tests to enforce architectural rules (no cycles; layered dependencies)
