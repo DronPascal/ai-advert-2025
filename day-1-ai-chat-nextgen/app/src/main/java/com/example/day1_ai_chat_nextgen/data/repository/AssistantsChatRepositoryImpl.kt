@@ -247,7 +247,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 threadId = agent1Thread.threadId,
                 request = CreateRunRequestDto(
                     assistantId = agent1AssistantId,
-                    temperature = 0.2
+                    temperature = 0.2,
+                    additionalInstructions = com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.AGENT_1_SYSTEM_PROMPT
                 )
             )
             if (!runResponse.isSuccessful) {
@@ -320,7 +321,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 threadId = agent2Thread.threadId,
                 request = CreateRunRequestDto(
                     assistantId = agent2AssistantId,
-                    temperature = 0.2
+                    temperature = 0.2,
+                    additionalInstructions = com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.AGENT_2_SYSTEM_PROMPT
                 )
             )
             if (!a2RunResponse.isSuccessful) {
