@@ -52,6 +52,15 @@ data/            # Data Access Layer
 - **Production Error Handling**: `catch (expected: Exception)` pattern for explicit intent
 - **Benefits**: Explicit error handling, no exceptions in happy path, Detekt compliant
 
+#### 5. Dual Agents Orchestration
+- Two Assistants (Agent 1: Planner & Clarifier; Agent 2: Clown Rewriter)
+- Two Threads, one per Agent, both cached across sessions (SharedPreferences keys per agent)
+- Handoff protocol: Agent 1 emits final message whose first line is `HANDOFF_AGENT2`; payload is the rest sent as-is to Agent 2
+- Observability: system `SYSTEM` messages used as dividers
+  - "Передача сообщения во 2-го агента" — when handoff detected
+  - "Сообщение принято агентом 2" — immediately after Agent 2 receives payload (before reply)
+- Repository method `sendMessageDualAgents()` orchestrates A1→A2; VM routes `SendMessage` to this method in MVP
+
 ### Dependency Flow
 ```
 Presentation → Domain ← Data

@@ -18,12 +18,16 @@
 - [x] **Production Error Patterns** - Standardized `expected: Exception` handling ✅
 - [x] **Code Quality Standards** - Established production-grade quality gates ✅
 - [ ] **Format UI Consistency** - Fix format indicator visibility across different states (ACTIVE: Format indicator sometimes disappears when clicking "New Thread")
+- [ ] **Dual Agents UI Toggle** - Add a switch to enable/disable dual-agents mode (MVP is always-on)
+- [ ] **Agent-specific Reset** - Separate reset actions for Agent 1 and Agent 2 threads
+- [ ] **Handoff Visualization** - Optional side-by-side view: payload vs Agent 2 rewritten response
 - [ ] **API Key Security Enhancement** - Replace BuildConfig with encrypted storage for production
  - [x] **Legacy Code Cleanup** - Remove Chat Completions implementation after migration validation
 - [ ] **ProGuard Optimization** - Fine-tune obfuscation rules for better app size
 
 ### Medium Priority
 - [ ] **CI/CD Pipeline** - Set up automated testing and deployment
+- [ ] **Handoff Tests** - Unit tests for HANDOFF detector and orchestration flows
 - [ ] **Unused Dependencies Analysis** - Add unused dependency detection (deferred)
 - [ ] **CI Job for Analyze/Report** - Run `assembleAnalyze` + `reportUnusedCode` in CI (deferred)
 - [ ] **Performance Monitoring** - Add analytics for app performance tracking
