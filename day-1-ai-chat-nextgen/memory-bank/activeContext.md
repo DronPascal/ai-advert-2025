@@ -5,6 +5,7 @@
 - Response format: thread-aware updates and resets on new thread
 - Observability: system dividers for agent handoff and acceptance; stable message persistence
 - UI polish: IME-aware chat and compact input; format indicator visibility after New Thread
+- MCP web-search MVP: Agent 1 умеет вызывать локальный шлюз поиска (Docker) с инструментальным циклом ACTION/ARGS/OBSERVATION и обогащением контента
 
 ## Recent Changes
 - Dual agents MVP implemented:
@@ -24,6 +25,12 @@
 - Architectural tests added with ArchUnit (no package cycles; layered dependencies) at `app/src/test/java/com/example/day1_ai_chat_nextgen/architecture/ArchitectureTest.kt`.
 - Legacy analysis artifacts replaced by the new pipeline (removed `FINAL_UNUSED_CODE_ANALYSIS.md`, `REFACTORING_SUMMARY.md`, `scripts/find_unused_code.py`).
 
+- MCP integration for Agent 1 (web search):
+  - Локальный HTTP шлюз `day-6-mcp` (FastAPI, DDG/Wikipedia; опционально enrichment первой страницы)
+  - В приложении: `McpBridgeApi`, DTO и DI; debug `BuildConfig.MCP_BRIDGE_URL = http://10.0.2.2:8765/`
+  - Репозиторий: парсит `ACTION: web.search`, вызывает шлюз с `enrich=true`, публикует `OBSERVATION:` и перезапускает ран
+  - `OBSERVATION:` содержит заголовки/URL и до 1000 символов контента
+
 ## Next Steps
 - UI toggle for enabling/disabling dual-agents mode (MVP: always on)
 - Separate reset actions for Agent 1 and Agent 2 threads
@@ -33,6 +40,7 @@
 - CI/CD: integrate detekt, unit tests, assembleRelease gates. Optional: add `assembleAnalyze` + `reportUnusedCode` to CI later (deferred).
 - Optional: add unused dependency analysis (deferred).
 - Security hardening follow-ups: certificate pinning, encrypted key storage for production.
+ - Улучшить источники поиска (Brave/SerpAPI ключи), добавить ретраи/таймауты, стратегию выбора источников по типу запроса; сделать `enrich` управляемым из ARGS/настроек
 
 ## Open Decisions
 - Model selection UI (single model vs multi-model): defer until backlog prioritization.
@@ -47,5 +55,6 @@
  - UI: Manual verification
    - keyboard no longer pushes whole layout; messages area compresses and last item remains visible
    - dual-agents handoff works; acceptance badge shows before Agent 2 reply; user message persists immediately
+   - web.search Divider + `OBSERVATION:` с заголовками/URL; при `enrich` добавляется фрагмент контента
 
 

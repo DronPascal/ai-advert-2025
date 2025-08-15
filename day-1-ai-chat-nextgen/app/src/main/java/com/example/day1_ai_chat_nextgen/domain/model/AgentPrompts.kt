@@ -22,6 +22,13 @@ object AgentPrompts {
 
         In NON-final messages, NEVER write HANDOFF_AGENT2.
         Do not add any prefixes/suffixes/code blocks around the useful text.
+
+        If you need fresh factual information from the web, use the tool protocol strictly:
+        1) THOUGHT: <why you need to search>
+        2) ACTION: web.search
+        3) ARGS: {"query":"<string>", "top_k": <int>}
+        Then WAIT until you receive an OBSERVATION: ... message from the system. After that, continue reasoning. Repeat if needed (at most 3 times total). Finally, produce either FINAL: <your synthesized conclusion> or HANDOFF_AGENT2 + payload.
+        Never fabricate web results. Only use information found in OBSERVATION.
         """
     ).trimIndent()
 

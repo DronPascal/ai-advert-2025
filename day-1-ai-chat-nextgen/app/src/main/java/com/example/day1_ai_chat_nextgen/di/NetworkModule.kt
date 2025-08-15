@@ -1,12 +1,14 @@
 package com.example.day1_ai_chat_nextgen.di
 
 import com.example.day1_ai_chat_nextgen.BuildConfig
+import com.example.day1_ai_chat_nextgen.data.remote.api.McpBridgeApi
 import com.example.day1_ai_chat_nextgen.data.remote.api.OpenAIAssistantsApi
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Named
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -63,7 +65,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(
+    @Named("openai")
+    fun provideOpenAiRetrofit(
         okHttpClient: OkHttpClient,
         json: Json
     ): Retrofit {
@@ -78,7 +81,44 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOpenAIAssistantsApi(retrofit: Retrofit): OpenAIAssistantsApi {
+    fun provideOpenAIAssistantsApi(@Named("openai") retrofit: Retrofit): OpenAIAssistantsApi {
         return retrofit.create(OpenAIAssistantsApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @Named("mcp")
+    fun provideMcpBridgeRetrofit(json: Json): Retrofit {
+        val baseUrl = if (BuildConfig.IS_DEBUG_BUILD && BuildConfig.MCP_BRIDGE_URL.isNotBlank()) {
+            BuildConfig.MCP_BRIDGE_URL
+        } else {
+            // Fallback to localhost for non-emulator runs
+            "http://localhost:8765/"
+        }
+
+        // Separate client without auth header injection
+        val httpClient = OkHttpClient.Builder()
+            .connectTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .apply {
+                if (BuildConfig.IS_DEBUG_BUILD) {
+                    val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
+                    addInterceptor(logging)
+                }
+            }
+            .build()
+
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(httpClient)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideMcpBridgeApi(@Named("mcp") mcpRetrofit: Retrofit): McpBridgeApi {
+        return mcpRetrofit.create(McpBridgeApi::class.java)
     }
 }
