@@ -12,6 +12,7 @@
  - Dual Agents MVP: two Assistants + two Threads with automatic handoff (Agent1→payload→Agent2)
  - System badges: "Передача сообщения во 2-го агента" and "Сообщение принято агентом 2" (до ответа А2)
  - Immediate local persistence of user message to prevent disappearance on refresh
+ - MCP web-search MVP for Agent 1 via local gateway (Docker): ACTION/ARGS/OBSERVATION loop, results with titles/URLs; enrichment returns content excerpt
 
 ## What's Left
 - Fix intermittent format indicator visibility after New Thread.
@@ -21,6 +22,7 @@
 - Optional: unused dependencies analysis (deferred).
 - Optional: CI job for `assembleAnalyze` + `reportUnusedCode` (deferred).
 - Production security hardening (pinning, encrypted key storage).
+ - Improve search sources (Brave/SerpAPI), retries/timeouts; configurable `enrich`
 
 ## Current Status
 - Build and codegen: stable on AGP 8.9.2, Kotlin 2.1.10, KSP 2.1.10-1.0.30, Hilt 2.53.1.
@@ -36,5 +38,6 @@
 - detekt: zero weighted issues.
 - `:app:assembleAnalyze` minifies with R8 `-printusage`.
 - `:app:reportUnusedCode` created `unused_code_report.md`.
+ - Local gateway `day-6-mcp` responds: `/healthz`, `/tools`, `/search`; emulator access via `http://10.0.2.2:8765/`
 
 

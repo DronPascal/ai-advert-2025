@@ -38,8 +38,15 @@ android {
                 "OPENAI_API_KEY",
                 "\"${localProperties.getProperty("openai_api_key", "")}\""
             )
+            // MCP bridge for local development (Android emulator -> host)
+            buildConfigField(
+                "String",
+                "MCP_BRIDGE_URL",
+                "\"http://10.0.2.2:8765/\""
+            )
         } else {
             buildConfigField("String", "OPENAI_API_KEY", "\"\"")
+            buildConfigField("String", "MCP_BRIDGE_URL", "\"\"")
         }
 
         buildConfigField(
