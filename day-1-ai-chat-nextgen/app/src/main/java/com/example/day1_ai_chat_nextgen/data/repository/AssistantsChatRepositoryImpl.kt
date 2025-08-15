@@ -9,6 +9,8 @@ import com.example.day1_ai_chat_nextgen.data.mapper.toDomain
 import com.example.day1_ai_chat_nextgen.data.mapper.toDomainMessages
 import com.example.day1_ai_chat_nextgen.data.mapper.toEntity
 import com.example.day1_ai_chat_nextgen.data.remote.api.OpenAIAssistantsApi
+import com.example.day1_ai_chat_nextgen.data.remote.api.McpBridgeApi
+import com.example.day1_ai_chat_nextgen.data.remote.dto.mcp.WebSearchRequestDto
 import com.example.day1_ai_chat_nextgen.data.remote.dto.CreateAssistantRequestDto
 import com.example.day1_ai_chat_nextgen.data.remote.dto.CreateMessageRequestDto
 import com.example.day1_ai_chat_nextgen.data.remote.dto.CreateRunRequestDto
@@ -36,7 +38,8 @@ class AssistantsChatRepositoryImpl @Inject constructor(
     private val chatMessageDao: ChatMessageDao,
     private val chatThreadDao: ChatThreadDao,
     private val responseFormatDao: ResponseFormatDao,
-    private val sharedPreferences: SharedPreferences
+    private val sharedPreferences: SharedPreferences,
+    private val mcpBridgeApi: McpBridgeApi
 ) : ChatRepository {
 
     companion object {
@@ -52,6 +55,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
         private const val HTTP_PAYMENT_REQUIRED = 402
         private const val HTTP_NOT_FOUND = 404
         private const val HTTP_TOO_MANY_REQUESTS = 429
+        private const val MAX_TOOL_CALLS = 3
     }
 
     // Legacy interface implementation (for compatibility)
@@ -270,18 +274,34 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             val lastAssistant = latestResponse.body()?.data?.toDomainMessages()?.firstOrNull()
                 ?: return Result.Error(ChatError.UnknownError("No message returned from Agent 1"))
 
+            // Tool-action loop: detect ACTION web.search and handle via MCP bridge (max 3 steps)
+            val toolHandled = handleAgent1ToolLoop(agent1Thread, lastAssistant.content)
+            if (toolHandled is Result.Error) return Result.Error(toolHandled.exception)
+
+            // If the tool loop posted further messages, fetch the last message again to determine handoff/payload
+            val agent1FinalResponse = assistantsApi.getMessages(
+                threadId = agent1Thread.threadId,
+                limit = 1,
+                order = "desc"
+            )
+            if (!agent1FinalResponse.isSuccessful) {
+                return handleHttpError(agent1FinalResponse.code(), agent1FinalResponse.errorBody()?.string())
+            }
+            val finalAssistant = agent1FinalResponse.body()?.data?.toDomainMessages()?.firstOrNull()
+                ?: lastAssistant
+
             // Save Agent1 assistant message locally (strip HANDOFF header from persisted text)
-            val possiblyStripped = stripHandoffHeader(lastAssistant.content)
-            val persistedA1 = lastAssistant.copy(content = possiblyStripped)
+            val possiblyStripped = stripHandoffHeader(finalAssistant.content)
+            val persistedA1 = finalAssistant.copy(content = possiblyStripped)
             chatMessageDao.insertMessage(persistedA1.toEntity())
 
             // Divider: Agent 1 → handoff
-            if (com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.extractPayloadForAgent2(lastAssistant.content) != null) {
+            if (com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.extractPayloadForAgent2(finalAssistant.content) != null) {
                 insertSystemDivider("Передача сообщения во 2-го агента")
             }
 
             // If no handoff, finish
-            val payload = com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.extractPayloadForAgent2(lastAssistant.content)
+            val payload = com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.extractPayloadForAgent2(finalAssistant.content)
             if (payload == null) {
                 chatThreadDao.updateThreadActivity(agent1Thread.id, System.currentTimeMillis())
                 return Result.Success(Unit)
@@ -740,6 +760,141 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             timestamp = System.currentTimeMillis()
         )
         chatMessageDao.insertMessage(systemMessage.toEntity())
+    }
+
+    private suspend fun insertSystemObservation(message: String) {
+        val systemMessage = ChatMessage(
+            id = UUID.randomUUID().toString(),
+            content = message,
+            role = MessageRole.SYSTEM,
+            timestamp = System.currentTimeMillis()
+        )
+        chatMessageDao.insertMessage(systemMessage.toEntity())
+    }
+
+    private fun parseActionAndArgs(text: String): Pair<String, String?>? {
+        val lines = text.lines()
+        var action: String? = null
+        var argsJson: String? = null
+        for (line in lines) {
+            val trimmed = line.trim()
+            if (trimmed.startsWith("ACTION:", ignoreCase = true)) {
+                action = trimmed.removePrefix("ACTION:").trim()
+            } else if (trimmed.startsWith("ARGS:", ignoreCase = true)) {
+                argsJson = trimmed.removePrefix("ARGS:").trim()
+            }
+        }
+        return if (action != null) action!! to argsJson else null
+    }
+
+    private fun extractQueryFromArgs(argsJson: String?): Pair<String, Int> {
+        return try {
+            if (argsJson.isNullOrBlank()) return "" to 5
+            // extremely lightweight parsing to avoid adding JSON parser here
+            val q = Regex("\"query\"\\s*:\\s*\"(.*?)\"").find(argsJson)?.groupValues?.getOrNull(1) ?: ""
+            val topK = Regex("\"top_k\"\\s*:\\s*(\\d+)").find(argsJson)?.groupValues?.getOrNull(1)?.toIntOrNull() ?: 5
+            q to topK
+        } catch (expected: Exception) {
+            "" to 5
+        }
+    }
+
+    private suspend fun handleAgent1ToolLoop(agent1Thread: ChatThread, firstReply: String): Result<Unit> {
+        var currentText = firstReply
+        var steps = 0
+        while (steps < MAX_TOOL_CALLS) {
+            val pair = parseActionAndArgs(currentText) ?: break
+            val (action, argsJson) = pair
+            if (!action.equals("web.search", ignoreCase = true)) {
+                break
+            }
+            val (query, topK) = extractQueryFromArgs(argsJson)
+            insertSystemDivider("Поиск в интернете: $query")
+            val searchResponse = try {
+                mcpBridgeApi.search(WebSearchRequestDto(query = query, topK = topK, enrich = true))
+            } catch (expected: Exception) {
+                null
+            }
+            var observationText = if (searchResponse != null && searchResponse.isSuccessful) {
+                val body = searchResponse.body()
+                val items = body?.results?.take(topK).orEmpty()
+                if (items.isEmpty()) "" else buildString {
+                    append("OBSERVATION:\n")
+                    items.forEachIndexed { index, r ->
+                        val line = if (r.url.isNotBlank()) "${index + 1}. ${r.title} — ${r.url}" else "${index + 1}. ${r.title}"
+                        append(line).append('\n')
+                        if (r.snippet.isNotBlank()) append("    ${r.snippet}\n")
+                        r.content?.let { content ->
+                            append("    --\n").append(content.take(1000)).append('\n')
+                        }
+                    }
+                }
+            } else {
+                ""
+            }
+
+            // If empty, try a refinement (append 'wikipedia' keyword)
+            if (observationText.isBlank()) {
+                val refined = try { mcpBridgeApi.search(WebSearchRequestDto(query = "$query wikipedia", topK = topK, enrich = true)) } catch (expected: Exception) { null }
+                observationText = if (refined != null && refined.isSuccessful) {
+                    val items = refined.body()?.results?.take(topK).orEmpty()
+                    if (items.isEmpty()) "OBSERVATION: no_results" else buildString {
+                        append("OBSERVATION:\n")
+                        items.forEachIndexed { index, r ->
+                            val line = if (r.url.isNotBlank()) "${index + 1}. ${r.title} — ${r.url}" else "${index + 1}. ${r.title}"
+                            append(line).append('\n')
+                            if (r.snippet.isNotBlank()) append("    ${r.snippet}\n")
+                            r.content?.let { content ->
+                                append("    --\n").append(content.take(1000)).append('\n')
+                            }
+                        }
+                    }
+                } else {
+                    "OBSERVATION: search_unavailable"
+                }
+            }
+
+            // Also reflect observation locally for user transparency
+            insertSystemObservation(observationText)
+
+            // Post observation to Agent 1 thread and re-run
+            val obsResp = assistantsApi.createMessage(
+                threadId = agent1Thread.threadId,
+                request = CreateMessageRequestDto(role = "user", content = observationText)
+            )
+            if (!obsResp.isSuccessful) return handleHttpError(obsResp.code(), obsResp.errorBody()?.string())
+
+            val rerunResp = assistantsApi.createRun(
+                threadId = agent1Thread.threadId,
+                request = CreateRunRequestDto(
+                    assistantId = sharedPreferences.getString(PREF_ASSISTANT1_ID, null)
+                        ?: return Result.Error(ChatError.AssistantNotFound),
+                    temperature = 0.2,
+                    additionalInstructions = com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.AGENT_1_SYSTEM_PROMPT
+                )
+            )
+            if (!rerunResp.isSuccessful) return handleHttpError(rerunResp.code(), rerunResp.errorBody()?.string())
+            val rerun = rerunResp.body() ?: return Result.Error(ChatError.UnknownError("Empty run response (rerun)"))
+            val poll = pollRunStatus(agent1Thread.threadId, rerun.id)
+            if (poll is Result.Error) return poll
+
+            val latest = assistantsApi.getMessages(
+                threadId = agent1Thread.threadId,
+                limit = 1,
+                order = "desc"
+            )
+            if (!latest.isSuccessful) return handleHttpError(latest.code(), latest.errorBody()?.string())
+            val nextMsg = latest.body()?.data?.toDomainMessages()?.firstOrNull()
+                ?: return Result.Error(ChatError.UnknownError("No message after observation"))
+
+            currentText = nextMsg.content
+            steps += 1
+            // If assistant produced final handoff message, stop looping
+            if (com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.extractPayloadForAgent2(currentText) != null) {
+                break
+            }
+        }
+        return Result.Success(Unit)
     }
 
     private suspend fun ensureAgentAssistant(
