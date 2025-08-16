@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import httpx
 from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
+from readability import Document
 
 app = FastAPI()
 
@@ -105,17 +106,42 @@ async def search(req: SearchRequest):
             pass
 
     if req.enrich and results:
-        first_url = results[0].get("url")
-        if first_url:
+        # choose first valid content page (filter SERP/aggregators)
+        SERP_HOST_PARTS = [
+            "duckduckgo.com", "google.", "bing.com", "yandex.", "search.yahoo.",
+            "/search?", "/search/", "news.yandex", "go.mail.ru/search"
+        ]
+        def is_valid(url: str) -> bool:
+            if not url:
+                return False
+            low = url.lower()
+            return not any(part in low for part in SERP_HOST_PARTS)
+
+        pick_idx = 0
+        for i, item in enumerate(results):
+            if is_valid(item.get("url", "")):
+                pick_idx = i
+                break
+
+        picked_url = results[pick_idx].get("url")
+        if picked_url:
             try:
-                async with httpx.AsyncClient(timeout=15) as client:
-                    r = await client.get(first_url, headers={"User-Agent": "mcp-web-gateway/1.0"})
+                async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+                    r = await client.get(picked_url, headers={"User-Agent": "mcp-web-gateway/1.0"})
                     if r.status_code == 200 and r.headers.get("content-type", "").startswith("text/html"):
-                        soup = BeautifulSoup(r.text, "lxml")
-                        paragraphs = [p.get_text(strip=True) for p in soup.find_all("p")]
-                        text = "\n\n".join(p for p in paragraphs if p)
+                        # Try readability first
+                        try:
+                            doc = Document(r.text)
+                            html = doc.summary(html_partial=True)
+                            soup = BeautifulSoup(html, "lxml")
+                            text = soup.get_text("\n", strip=True)
+                        except Exception:
+                            soup = BeautifulSoup(r.text, "lxml")
+                            paragraphs = [p.get_text(strip=True) for p in soup.find_all("p")]
+                            text = "\n\n".join(p for p in paragraphs if p)
                         if text:
-                            results[0]["content"] = text[:4000]
+                            results[pick_idx]["content"] = text[:16000]
+                            results[pick_idx]["picked_url"] = str(r.url)
             except Exception:
                 pass
 

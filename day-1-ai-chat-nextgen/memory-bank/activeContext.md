@@ -28,8 +28,12 @@
 - MCP integration for Agent 1 (web search):
   - Локальный HTTP шлюз `day-6-mcp` (FastAPI, DDG/Wikipedia; опционально enrichment первой страницы)
   - В приложении: `McpBridgeApi`, DTO и DI; debug `BuildConfig.MCP_BRIDGE_URL = http://10.0.2.2:8765/`
-  - Репозиторий: парсит `ACTION: web.search`, вызывает шлюз с `enrich=true`, публикует `OBSERVATION:` и перезапускает ран
+  - Репозиторий: парсит `ACTION: web.search`, вызывает шлюз с `enrich=true`, публикует `OBSERVATION:` и перезапускает ран; если Агент 1 не сделал HANDOFF — выполняется принудительный handoff с `SOURCES+PAYLOAD` к Агенту 2
   - `OBSERVATION:` содержит заголовки/URL и до 1000 символов контента
+
+- Агентные промпты:
+  - Агент 1: жёсткие правила HANDOFF (строго в начале сообщения) и обязательный вызов инструмента при явной просьбе «ищи/найди/свежие новости…», формат вывода при запросе — только THOUGHT/ACTION/ARGS
+  - Агент 2: вместо двух фаз сразу выдаёт короткую сводку клоунским стилем (3–5 пунктов, ≤12 слов), с ссылками [n] на источники
 
 ## Next Steps
 - UI toggle for enabling/disabling dual-agents mode (MVP: always on)

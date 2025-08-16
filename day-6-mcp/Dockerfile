@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 RUN pip install --no-cache-dir fastapi uvicorn[standard] httpx duckduckgo_search==6.1.7 \
-    beautifulsoup4 lxml
+    beautifulsoup4 lxml readability-lxml
 
 COPY server.py /app/server.py
 
