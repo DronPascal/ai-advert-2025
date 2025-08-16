@@ -13,6 +13,8 @@
  - System badges: "Передача сообщения во 2-го агента" and "Сообщение принято агентом 2" (до ответа А2)
  - Immediate local persistence of user message to prevent disappearance on refresh
  - MCP web-search MVP for Agent 1 via local gateway (Docker): ACTION/ARGS/OBSERVATION loop, results with titles/URLs; enrichment returns content excerpt
+- Forced handoff: если Агент 1 не ставит HANDOFF, репозиторий передаёт SOURCES+PAYLOAD Агенту 2 автоматически
+- Агент 2: сразу выдаёт краткую выжимку клоунским стилем (3–5 пунктов, ≤12 слов, с [n]-ссылками)
 
 ## What's Left
 - Fix intermittent format indicator visibility after New Thread.
