@@ -300,11 +300,16 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 insertSystemDivider("Передача сообщения во 2-го агента")
             }
 
-            // If no handoff, finish
-            val payload = com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.extractPayloadForAgent2(finalAssistant.content)
+            // If no handoff, try forced handoff using collected sources
+            var payload = com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.extractPayloadForAgent2(finalAssistant.content)
             if (payload == null) {
-                chatThreadDao.updateThreadActivity(agent1Thread.id, System.currentTimeMillis())
-                return Result.Success(Unit)
+                val sourcesFromA1 = sharedPreferences.getString("agent1_collected_sources", null)
+                if (sourcesFromA1.isNullOrBlank()) {
+                    chatThreadDao.updateThreadActivity(agent1Thread.id, System.currentTimeMillis())
+                    return Result.Success(Unit)
+                } else {
+                    payload = "Сформируй краткую, точную и разговорную выжимку для пользователя на основе SOURCES. Ничего не выдумывай, только факты из источников. Затем перепиши её клоунским стилем."
+                }
             }
 
             // Ensure Agent 2 assistant and thread
@@ -325,10 +330,21 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                 is Result.Loading -> return Result.Error(ChatError.UnknownError("Unexpected loading state"))
             }
 
-            // Agent 2 receives payload as-is
+            // Agent 2 receives SOURCES + payload
+            val sourcesBlock = sharedPreferences.getString("agent1_collected_sources", null)
+            val handoffContent = if (!sourcesBlock.isNullOrBlank()) {
+                """
+                SOURCES
+                $sourcesBlock
+
+                PAYLOAD
+                $payload
+                """.trimIndent()
+            } else payload
+
             val a2MessageResponse = assistantsApi.createMessage(
                 threadId = agent2Thread.threadId,
-                request = CreateMessageRequestDto(role = "user", content = payload)
+                request = CreateMessageRequestDto(role = "user", content = handoffContent)
             )
             if (!a2MessageResponse.isSuccessful) {
                 return handleHttpError(a2MessageResponse.code(), a2MessageResponse.errorBody()?.string())
@@ -802,6 +818,7 @@ class AssistantsChatRepositoryImpl @Inject constructor(
     private suspend fun handleAgent1ToolLoop(agent1Thread: ChatThread, firstReply: String): Result<Unit> {
         var currentText = firstReply
         var steps = 0
+        val collectedSources = mutableListOf<String>()
         while (steps < MAX_TOOL_CALLS) {
             val pair = parseActionAndArgs(currentText) ?: break
             val (action, argsJson) = pair
@@ -827,6 +844,15 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                         r.content?.let { content ->
                             append("    --\n").append(content.take(1000)).append('\n')
                         }
+                        val compact = buildString {
+                            append("- ")
+                            append(r.title.ifBlank { r.url })
+                            if (r.url.isNotBlank()) append(" — ").append(r.url)
+                            r.content?.take(800)?.let { c ->
+                                append("\n  ").append(c.replace('\n', ' ').take(800))
+                            }
+                        }
+                        collectedSources.add(compact)
                     }
                 }
             } else {
@@ -847,6 +873,15 @@ class AssistantsChatRepositoryImpl @Inject constructor(
                             r.content?.let { content ->
                                 append("    --\n").append(content.take(1000)).append('\n')
                             }
+                            val compact = buildString {
+                                append("- ")
+                                append(r.title.ifBlank { r.url })
+                                if (r.url.isNotBlank()) append(" — ").append(r.url)
+                                r.content?.take(800)?.let { c ->
+                                    append("\n  ").append(c.replace('\n', ' ').take(800))
+                                }
+                            }
+                            collectedSources.add(compact)
                         }
                     }
                 } else {
@@ -893,6 +928,11 @@ class AssistantsChatRepositoryImpl @Inject constructor(
             if (com.example.day1_ai_chat_nextgen.domain.model.AgentPrompts.extractPayloadForAgent2(currentText) != null) {
                 break
             }
+        }
+        if (collectedSources.isNotEmpty()) {
+            sharedPreferences.edit()
+                .putString("agent1_collected_sources", collectedSources.joinToString("\n"))
+                .apply()
         }
         return Result.Success(Unit)
     }
