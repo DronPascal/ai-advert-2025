@@ -19,6 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.day1_ai_chat_nextgen.domain.model.ChatMessage
 import com.example.day1_ai_chat_nextgen.domain.model.MessageRole
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import io.noties.markwon.Markwon
+import androidx.compose.ui.graphics.toArgb
 
 @Stable
 data class MessageBubbleColors(
@@ -73,13 +77,20 @@ fun MessageBubble(
                     ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Text(
-                        text = message.content,
+                    val context = LocalContext.current
+                    AndroidView(
                         modifier = Modifier.padding(12.dp),
-                        color = colors.textColor,
-                        fontSize = 16.sp,
-                        fontWeight = if (message.role == MessageRole.SYSTEM) FontWeight.Medium else FontWeight.Normal,
-                        lineHeight = 20.sp
+                        factory = {
+                            android.widget.TextView(it).apply {
+                                setTextColor(colors.textColor.toArgb())
+                                textSize = 16f
+                                setLineSpacing(0f, 1.25f)
+                            }
+                        },
+                        update = { tv ->
+                            val markwon = Markwon.create(context)
+                            markwon.setMarkdown(tv, message.content)
+                        }
                     )
                 }
             }

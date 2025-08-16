@@ -174,6 +174,8 @@ dependencies {
 
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    // Markdown rendering
+    implementation(libs.markwon.core)
 }
 
 // Allow references to generated code
