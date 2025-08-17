@@ -52,52 +52,30 @@ def send_telegram_message(message: str) -> bool:
         logger.error(f"Error in demo telegram function: {str(e)}")
         return False
 
-# Remote MCP Tools Configuration
+# Remote MCP Tools Configuration - LIMITED for context efficiency
 tools = [
     {
         "type": "mcp",
         "server_url": MCP_TIKTOKEN_URL,
         "server_label": "tiktoken",
         "allowed_tools": [
-            "fetch_tiktoken_documentation",
-            "search_tiktoken_documentation", 
-            "search_tiktoken_code",
-            "fetch_generic_url_content"
+            "search_tiktoken_documentation"  # Only search, not full fetch
         ],
         "require_approval": "never"
     }
 ]
 
-# System instructions for tiktoken MCP analysis
+# System instructions - COMPACT for context efficiency
 SYSTEM_INSTRUCTIONS = """
-Ты — AI-эксперт и технический писатель. Используй tiktoken MCP для создания познавательного ежедневного контента.
+Создай краткую AI сводку на основе tiktoken. 
 
-ПРОЦЕСС:
-1. Используй tiktoken MCP инструменты для получения информации:
-   - fetch_tiktoken_documentation: получи основную документацию
-   - search_tiktoken_documentation: найди интересные детали  
-   - search_tiktoken_code: изучи примеры кода
-   - fetch_generic_url_content: получи дополнительные материалы
+1. Найди 1 факт о токенизации через search_tiktoken_documentation
+2. Сформулируй в 3 пункта:
+• Что такое tiktoken (кратко)
+• Интересный факт о BPE
+• Практический совет
 
-2. Создай познавательную сводку об AI/токенизации
-
-ФОРМАТ СВОДКИ:
-🤖 **AI Insights Daily**
-
-• **Технология дня**: что такое tiktoken и зачем нужен
-• **Практическое применение**: как используется в GPT моделях
-• **Интересный факт**: малоизвестная особенность токенизации
-• **Совет разработчику**: практический пример использования
-• **AI тренд**: связь с современными языковыми моделями
-
-ПРАВИЛА:
-- Максимум 1000 символов
-- Используй данные от tiktoken MCP
-- Простой язык, интересно для широкой аудитории
-- Добавь эмодзи для читаемости
-- В конце отправь сводку в Telegram
-
-Начинай с изучения tiktoken через MCP инструменты.
+Максимум 300 символов. Русский язык. Добавь 🤖 эмодзи.
 """
 
 def run_ai_insights() -> Tuple[str, str]:
@@ -115,12 +93,10 @@ def run_ai_insights() -> Tuple[str, str]:
         # Prepare request body with remote MCP tools
         body = {
             "model": MODEL,
-            "tools": tools,  # Include remote MCP configuration
+            "tools": tools,
             "instructions": SYSTEM_INSTRUCTIONS,
-            "input": f"Создай ежедневную AI Insights сводку за {current_date}. "
-                    f"Текущее время: {current_time} Europe/Amsterdam. "
-                    f"Используй tiktoken MCP для получения информации о токенизации, "
-                    f"затем создай познавательную сводку и отправь её в Telegram.",
+            "input": f"Создай AI сводку за {current_date}. Используй search_tiktoken_documentation для поиска фактов.",
+            "max_output_tokens": 500  # Limit output to save context
         }
         
         # Make API call with MCP tools
