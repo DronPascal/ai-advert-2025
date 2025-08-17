@@ -13,15 +13,14 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
 import pytz
 
-from main import main as run_crypto_digest
+from main import run_ai_insights as run_crypto_digest
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
     handlers=[
-        logging.FileHandler('/var/log/scheduler.log'),
-        logging.StreamHandler()
+        logging.StreamHandler()  # Docker logs to stdout/stderr
     ]
 )
 logger = logging.getLogger(__name__)
