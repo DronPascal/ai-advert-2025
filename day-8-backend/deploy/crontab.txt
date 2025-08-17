@@ -1,0 +1,9 @@
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Daily crypto digest at 22:00 Europe/Amsterdam
+# Format: minute hour day month weekday command
+0 22 * * * /usr/local/bin/python /app/main.py >> /var/log/app.log 2>&1
+
+# Keep cron alive
+
