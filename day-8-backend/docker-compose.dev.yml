@@ -1,0 +1,81 @@
+version: '3.8'
+
+# Development compose file with additional services for testing
+services:
+  crypto-digest:
+    build: .
+    container_name: crypto-digest-dev
+    restart: "no"  # Don't restart automatically in dev
+    
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4}
+      MCP_WEB3_URL: ${MCP_WEB3_URL:-https://mock-web3-mcp.example.com}
+      MCP_WHITEPAPER_URL: ${MCP_WHITEPAPER_URL:-https://mock-whitepapers-mcp.example.com}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-test_bot_token}
+      TELEGRAM_USER_ID: ${TELEGRAM_USER_ID:-test_user_id}
+      SCHEDULE_HOUR: ${SCHEDULE_HOUR:-22}
+      SCHEDULE_MINUTE: ${SCHEDULE_MINUTE:-0}
+      TZ: Europe/Amsterdam
+      PYTHONUNBUFFERED: 1
+    
+    volumes:
+      # Mount source code for development
+      - ./app:/app
+      - ./logs:/var/log
+      - ./cache:/tmp
+    
+    ports:
+      - "8000:8000"  # For potential debugging endpoints
+    
+    command: ["python", "scheduler.py"]
+    
+    # Development network
+    networks:
+      - crypto-dev
+    
+    # Depends on mock MCP services (for testing)
+    depends_on:
+      - mock-web3-mcp
+      - mock-telegram-mcp
+
+  # Mock MCP services for development/testing
+  mock-web3-mcp:
+    image: nginx:alpine
+    container_name: mock-web3-mcp
+    ports:
+      - "3001:80"
+    volumes:
+      - ./dev/mock-responses:/usr/share/nginx/html
+    networks:
+      - crypto-dev
+
+  mock-telegram-mcp:
+    image: nginx:alpine  
+    container_name: mock-telegram-mcp
+    ports:
+      - "3003:80"
+    volumes:
+      - ./dev/mock-responses:/usr/share/nginx/html
+    networks:
+      - crypto-dev
+
+  # Log aggregator for development
+  log-viewer:
+    image: datalust/seq:latest
+    container_name: crypto-logs
+    environment:
+      ACCEPT_EULA: Y
+    ports:
+      - "5341:5341"
+      - "8080:80"
+    volumes:
+      - ./logs:/data
+    networks:
+      - crypto-dev
+    profiles: ["logging"]
+
+networks:
+  crypto-dev:
+    driver: bridge
+
