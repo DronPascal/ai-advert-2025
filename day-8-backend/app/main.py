@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Fallback version: Daily crypto digest without remote MCP tools
-Uses OpenAI's built-in knowledge + web search capabilities when available
+Daily crypto digest using OpenAI Responses API with Web3 MCP integration
 """
 import os
 import sys
@@ -25,6 +24,9 @@ logger = logging.getLogger(__name__)
 # Environment variables
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4")
+
+# MCP Server URL
+MCP_WEB3_URL = os.environ["MCP_WEB3_URL"]
 
 # Direct Telegram API integration
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
@@ -62,62 +64,81 @@ def send_telegram_message(message: str) -> bool:
         logger.error(f"Unexpected error sending Telegram message: {str(e)}")
         return False
 
-# Enhanced system instructions for knowledge-based analysis
-SYSTEM_INSTRUCTIONS = """
-Ты — опытный крипто-аналитик с глубокими знаниями рынка цифровых активов.
+# Remote MCP Tools Configuration
+tools = [
+    {
+        "type": "mcp",
+        "server_url": MCP_WEB3_URL,
+        "server_label": "web3research",
+        "allowed_tools": [
+            "search",
+            "create-research-plan", 
+            "research-with-keywords",
+            "fetch-content",
+            "generate-report"
+        ],
+        "require_approval": "never"
+    }
+]
 
-ЗАДАЧА:
-Создай качественную ежедневную криптосводку на основе твоих знаний о:
-- Текущих трендах криптовалютного рынка
-- Основных криптовалютах (Bitcoin, Ethereum, крупные альткоины)
-- DeFi, NFT, Layer 2 решениях
-- Регуляторных новостях и институциональном принятии
-- Технологических обновлениях блокчейн проектов
+# System instructions for MCP-enhanced analysis
+SYSTEM_INSTRUCTIONS = """
+Ты — опытный крипто-аналитик. Используй доступный web3research MCP для получения актуальных данных.
+
+ПРОЦЕСС:
+1. Используй инструменты web3research MCP для получения:
+   - Актуальных цен и рыночных данных 
+   - Последних новостей криптовалютного рынка
+   - Исследований по ключевым проектам
+   - Анализа трендов и настроений рынка
+
+2. На основе полученных данных создай структурированную сводку
 
 ФОРМАТ СВОДКИ:
-1. **Рыночная ситуация**: общий тренд, доминация Bitcoin
-2. **Ключевые события**: важные новости за последние дни
-3. **Технические разработки**: обновления протоколов, новые решения
-4. **Институциональные движения**: принятие крупными компаниями
-5. **Регуляторные обновления**: изменения в законодательстве
-6. **Перспективы**: краткосрочные ожидания
+• **Рынок**: общий тренд, цены BTC/ETH, доминация
+• **Новости**: ключевые события за день
+• **Проекты**: обновления крупных протоколов  
+• **Институты**: движения крупных игроков
+• **Технологии**: новые решения и обновления
+• **Прогноз**: краткосрочные ожидания
 
 ПРАВИЛА:
-- Используй актуальные знания о криптопространстве
-- Включай конкретные примеры проектов и технологий
 - Максимум 800 символов
-- Используй буллеты (•) для структуры
-- Человекочитаемый, информативный стиль
-- НЕ упоминай ограничения по данным или необходимость в доп. источниках
-- Пиши как будто у тебя есть доступ к свежей информации
+- Используй конкретные данные от MCP
+- Человекочитаемый стиль с буллетами
+- В конце отправь готовую сводку в Telegram
 
-КОНТЕКСТ: Сегодня {current_date}, создай сводку как будто анализируешь последние события на рынке.
+Начинай с исследования актуальной ситуации через web3research MCP.
 """
 
 def run_crypto_digest() -> Tuple[str, str]:
     """
-    Execute daily crypto digest using Responses API with enhanced knowledge-based approach.
+    Execute daily crypto digest using Responses API with Web3 MCP integration.
     
     Returns:
         Tuple of (response_id, digest_text)
     """
     try:
-        logger.info("Starting crypto digest generation (knowledge-based)...")
+        logger.info("Starting crypto digest generation with Web3 MCP...")
         current_date = datetime.now().strftime('%d.%m.%Y')
         current_time = datetime.now().strftime('%H:%M')
         
-        # Prepare request body - no MCP tools, rely on model knowledge
+        # Prepare request body with remote MCP tools
         body = {
             "model": MODEL,
-            "instructions": SYSTEM_INSTRUCTIONS.format(current_date=current_date),
+            "tools": tools,  # Include remote MCP configuration
+            "instructions": SYSTEM_INSTRUCTIONS,
             "input": f"Создай ежедневную криптосводку за {current_date}. "
                     f"Текущее время: {current_time} Europe/Amsterdam. "
-                    f"Анализируй последние тренды и события в криптопространстве. "
-                    f"Верни готовый текст сводки для отправки в Telegram.",
+                    f"Используй web3research MCP для получения актуальных данных, "
+                    f"затем создай структурированную сводку и отправь её в Telegram.",
         }
         
-        # Make API call to get digest content
-        logger.info("Calling OpenAI Responses API for digest generation...")
+        # Make API call with MCP tools
+        logger.info("Calling OpenAI Responses API with Web3 MCP...")
+        logger.info(f"MCP Server URL: {MCP_WEB3_URL}")
+        logger.info(f"Tools configured: {len(tools[0]['allowed_tools'])} tools available")
+        
         response = client.responses.create(**body)
         
         # Extract response data
@@ -174,8 +195,9 @@ def run_with_retries(max_retries: int = 3) -> Tuple[str, str]:
 
 if __name__ == "__main__":
     try:
-        logger.info("=== Crypto Daily Digest Service Started (Fallback Mode) ===")
+        logger.info("=== Crypto Daily Digest Service Started (Web3 MCP Mode) ===")
         logger.info(f"Model: {MODEL}")
+        logger.info(f"Web3 MCP URL: {MCP_WEB3_URL}")
         logger.info(f"Timezone: Europe/Amsterdam")
         
         # Run digest generation with retries
