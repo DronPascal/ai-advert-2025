@@ -28,18 +28,44 @@ TELEGRAM_USER_ID = os.environ["TELEGRAM_USER_ID"]
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 def send_telegram_message(message: str) -> bool:
-    """Send message directly to Telegram user via Bot API (DEMO MODE)."""
+    """Send message directly to Telegram user via Bot API."""
     try:
-        logger.info("="*60)
-        logger.info("📱 TELEGRAM MESSAGE (DEMO MODE):")
-        logger.info("="*60)
-        logger.info(f"TO: User {TELEGRAM_USER_ID}")
-        logger.info(f"MESSAGE:\n{message}")
-        logger.info("="*60)
-        logger.info(f"✅ Message would be sent to Telegram user {TELEGRAM_USER_ID}")
-        return True
+        # Check if we're in demo mode
+        if TELEGRAM_BOT_TOKEN == "demo_token":
+            logger.info("="*60)
+            logger.info("📱 TELEGRAM MESSAGE (DEMO MODE):")
+            logger.info("="*60)
+            logger.info(f"TO: User {TELEGRAM_USER_ID}")
+            logger.info(f"MESSAGE:\n{message}")
+            logger.info("="*60)
+            logger.info("ℹ️ Set real TELEGRAM_BOT_TOKEN to send actual messages")
+            return True
+        
+        # Real Telegram API call
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        data = {
+            "chat_id": TELEGRAM_USER_ID,
+            "text": message,
+            "parse_mode": "HTML", 
+            "disable_web_page_preview": True
+        }
+        
+        response = requests.post(url, json=data, timeout=30)
+        response.raise_for_status()
+        
+        result = response.json()
+        if result.get("ok"):
+            logger.info(f"✅ Message sent successfully to Telegram user {TELEGRAM_USER_ID}")
+            return True
+        else:
+            logger.error(f"❌ Telegram API error: {result}")
+            return False
+            
+    except requests.RequestException as e:
+        logger.error(f"❌ Failed to send Telegram message: {str(e)}")
+        return False
     except Exception as e:
-        logger.error(f"Error in demo telegram function: {str(e)}")
+        logger.error(f"❌ Unexpected error sending Telegram message: {str(e)}")
         return False
 
 def run_simple_insights() -> Tuple[str, str]:
