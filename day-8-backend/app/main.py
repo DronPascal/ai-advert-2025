@@ -28,8 +28,9 @@ logger = logging.getLogger(__name__)
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4")
 
-# MCP Server URL - using working tiktoken MCP for demo
+# MCP Server URLs
 MCP_TIKTOKEN_URL = "https://gitmcp.io/openai/tiktoken"
+DEEPWIKI_URL = "https://mcp.deepwiki.com/mcp"
 
 # Direct Telegram API integration
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
@@ -79,41 +80,56 @@ def send_telegram_message(message: str) -> bool:
         logger.error(f"❌ Unexpected error sending Telegram message: {str(e)}")
         return False
 
-# Remote MCP Tools Configuration - LIMITED for context efficiency
+# Remote MCP Tools Configuration - tiktoken + GitMCP integration
 tools = [
     {
         "type": "mcp",
         "server_url": MCP_TIKTOKEN_URL,
         "server_label": "tiktoken",
         "allowed_tools": [
-            "search_tiktoken_documentation"  # Only search, not full fetch
+            "search_tiktoken_documentation"  # Search tiktoken documentation
+        ],
+        "require_approval": "never"
+    },
+    {
+        "type": "mcp",
+        "server_url": DEEPWIKI_URL,
+        "server_label": "deepwiki",
+        "allowed_tools": [
+            "ask_question"  # Ask questions about documentation/knowledge
         ],
         "require_approval": "never"
     }
 ]
 
-# System instructions - COMPACT for context efficiency
+# System instructions - tiktoken + DeepWiki integration workflow
 SYSTEM_INSTRUCTIONS = """
-Создай краткую AI сводку на основе tiktoken. 
+Создай интересную техническую сводку, используя два источника данных:
 
-1. Найди 1 факт о токенизации через search_tiktoken_documentation
-2. Сформулируй в 3 пункта:
-• Что такое tiktoken (кратко)
-• Интересный факт о BPE
-• Практический совет
+ЭТАП 1 - Исследование tiktoken:
+- Используй search_tiktoken_documentation для поиска интересного факта о токенизации
 
-Максимум 300 символов. Русский язык. Добавь 🤖 эмодзи.
+ЭТАП 2 - DeepWiki исследование:
+- На основе найденного факта используй ask_question для поиска дополнительной технической информации
+- Задай вопрос о практическом применении или связанных концепциях
+
+ЭТАП 3 - Формирование сводки:
+• 🔍 Интересный факт из tiktoken
+• 📚 Дополнительные знания из DeepWiki
+• 💡 Практическое применение
+
+Максимум 400 символов. Русский язык. Используй эмодзи 🤖🔍📚.
 """
 
 def run_ai_insights() -> Tuple[str, str]:
     """
-    Execute daily AI insights using Responses API with tiktoken MCP integration.
+    Execute daily AI insights using Responses API with tiktoken + DeepWiki integration.
     
     Returns:
         Tuple of (response_id, insights_text)
     """
     try:
-        logger.info("Starting AI insights generation with tiktoken MCP...")
+        logger.info("Starting AI insights generation with tiktoken + DeepWiki integration...")
         current_date = datetime.now().strftime('%d.%m.%Y')
         current_time = datetime.now().strftime('%H:%M')
         
@@ -122,14 +138,16 @@ def run_ai_insights() -> Tuple[str, str]:
             "model": MODEL,
             "tools": tools,
             "instructions": SYSTEM_INSTRUCTIONS,
-            "input": f"Создай AI сводку за {current_date}. Используй search_tiktoken_documentation для поиска фактов.",
-            "max_output_tokens": 500  # Limit output to save context
+            "input": f"Создай техническую сводку за {current_date}. Сначала найди интересный факт через tiktoken MCP, затем получи дополнительную информацию через DeepWiki.",
+            "max_output_tokens": 600  # Increased for two-source content
         }
         
-        # Make API call with MCP tools
-        logger.info("Calling OpenAI Responses API with tiktoken MCP...")
-        logger.info(f"MCP Server URL: {MCP_TIKTOKEN_URL}")
-        logger.info(f"Tools configured: {len(tools[0]['allowed_tools'])} tools available")
+        # Make API call with dual MCP tools
+        logger.info("Calling OpenAI Responses API with tiktoken + DeepWiki...")
+        logger.info(f"tiktoken MCP URL: {MCP_TIKTOKEN_URL}")
+        logger.info(f"DeepWiki URL: {DEEPWIKI_URL}")
+        total_tools = sum(len(tool['allowed_tools']) for tool in tools)
+        logger.info(f"Tools configured: {total_tools} tools from {len(tools)} MCP servers")
         
         response = client.responses.create(**body)
         
@@ -187,9 +205,10 @@ def run_with_retries(max_retries: int = 3) -> Tuple[str, str]:
 
 if __name__ == "__main__":
     try:
-        logger.info("=== AI Insights Daily Service Started (tiktoken MCP Mode) ===")
+        logger.info("=== AI Insights Daily Service Started (tiktoken + DeepWiki Mode) ===")
         logger.info(f"Model: {MODEL}")
         logger.info(f"tiktoken MCP URL: {MCP_TIKTOKEN_URL}")
+        logger.info(f"DeepWiki URL: {DEEPWIKI_URL}")
         logger.info(f"Timezone: Europe/Amsterdam")
         
         # Run insights generation with retries
