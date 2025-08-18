@@ -103,6 +103,43 @@ class CryptoDigestScheduler:
         logger.info("Running crypto digest immediately for testing...")
         self.job_wrapper()
     
+    def add_dev_job(self):
+        """Add development job that runs every 2 minutes."""
+        from apscheduler.triggers.interval import IntervalTrigger
+        
+        trigger = IntervalTrigger(minutes=2, timezone=TIMEZONE)
+        
+        self.scheduler.add_job(
+            func=self.job_wrapper,
+            trigger=trigger,
+            id='crypto_dev_digest',
+            name='Crypto Dev Digest (Every 2 min)',
+            misfire_grace_time=60,  # Allow 1 minute grace for missed jobs
+            coalesce=True,  # Combine missed jobs into one
+            max_instances=1  # Only one instance at a time
+        )
+        
+        logger.info("📅 Scheduled dev digest every 2 minutes")
+    
+    def start_dev(self):
+        """Start the development scheduler."""
+        logger.info("=== 🧪 Crypto Dev Scheduler Starting ===")
+        logger.info(f"Current time: {datetime.now(TIMEZONE).strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        
+        # Print next run time info
+        logger.info("📅 Next run: in 2 minutes")
+        
+        # Start scheduler
+        try:
+            logger.info("🔄 Dev Scheduler started. Press Ctrl+C to exit.")
+            logger.info("⏰ Will send AI insights every 2 minutes!")
+            self.scheduler.start()
+        except KeyboardInterrupt:
+            logger.info("⛔ Dev Scheduler stopped by user.")
+        except Exception as e:
+            logger.error(f"❌ Dev Scheduler error: {str(e)}")
+            raise
+    
     def start(self):
         """Start the scheduler."""
         logger.info("=== Crypto Digest Scheduler Starting ===")
@@ -130,9 +167,28 @@ def main():
     """Main entry point for the scheduler."""
     scheduler = CryptoDigestScheduler()
     
-    # Check for test mode
-    if len(sys.argv) > 1 and sys.argv[1] == '--test':
-        scheduler.run_now_for_testing()
+    # Check for different modes
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '--test':
+            scheduler.run_now_for_testing()
+        elif sys.argv[1] == '--immediate':
+            # Run immediately and then start normal schedule
+            logger.info("🏃 Running immediately, then starting normal schedule...")
+            try:
+                scheduler.run_now_for_testing()
+                logger.info("✅ Immediate run completed, starting normal schedule...")
+            except Exception as e:
+                logger.error(f"❌ Immediate run failed: {e}")
+            scheduler.start()
+        elif sys.argv[1] == '--dev':
+            # Development mode: immediate + every 2 minutes
+            logger.info("🧪 Development mode: immediate + every 2 minutes")
+            scheduler.run_now_for_testing()
+            scheduler.add_dev_job()
+            scheduler.start_dev()
+        else:
+            logger.info(f"Unknown argument: {sys.argv[1]}")
+            scheduler.start()
     else:
         scheduler.start()
 

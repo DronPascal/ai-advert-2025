@@ -9,6 +9,10 @@ import requests
 from datetime import datetime, timezone
 from typing import Optional, Tuple
 from openai import OpenAI
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging (console only for demo)
 logging.basicConfig(

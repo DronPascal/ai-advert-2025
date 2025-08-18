@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   crypto-digest:
     build: .
@@ -56,7 +54,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # Optional: Test service for immediate execution
+  # Test service for immediate execution only
   crypto-digest-test:
     build: .
     container_name: crypto-digest-test
@@ -65,8 +63,6 @@ services:
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4}
-      MCP_WEB3_URL: ${MCP_WEB3_URL}
-      MCP_WHITEPAPER_URL: ${MCP_WHITEPAPER_URL}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_USER_ID: ${TELEGRAM_USER_ID}
       TZ: Europe/Amsterdam
@@ -76,4 +72,24 @@ services:
       - ./cache:/tmp
     
     command: ["python", "scheduler.py", "--test"]
+
+  # Development service: immediate + every 2 minutes
+  crypto-digest-dev:
+    build: .
+    container_name: crypto-digest-dev
+    profiles: ["dev"]  # Only runs when specifically requested
+    restart: unless-stopped
+    
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_USER_ID: ${TELEGRAM_USER_ID}
+      TZ: Europe/Amsterdam
+    
+    volumes:
+      - ./logs:/var/log
+      - ./cache:/tmp
+    
+    command: ["python", "scheduler.py", "--dev"]
 
