@@ -1,4 +1,8 @@
-# AI Advert 2025 Challenge
+# AI Advert Challenge 2025
+
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/de6ed755-6785-42e8-b653-2b1e420d3526" />
+
+## Календарь
 
 • **День 1. Подключение LLM**
   - Подключена OpenAI API в Android приложение
