@@ -1,0 +1,25 @@
+# Regoose - AI Test Generation Agent
+# Core dependencies
+openai>=1.51.0
+pydantic>=2.5.0
+typer[all]>=0.9.0
+rich>=13.7.0
+
+# MCP support
+mcp>=1.0.0
+
+# Testing frameworks support
+pytest>=8.0.0
+pytest-html>=4.1.1
+pytest-json-report>=1.5.0
+
+# Code analysis
+ast-decompiler>=0.7.0
+black>=23.12.1
+isort>=5.13.2
+
+# Container support
+python-on-whales>=0.71.0  # Docker/Podman wrapper
+
+# Development
+python-dotenv>=1.0.0
