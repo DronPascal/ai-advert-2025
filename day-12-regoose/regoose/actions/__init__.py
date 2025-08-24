@@ -5,6 +5,9 @@ from .analyze_code import AnalyzeCodeAction
 from .generate_tests import GenerateTestsAction
 from .run_tests import RunTestsAction
 from .generate_report import GenerateReportAction
+from .github_read_pr import GitHubReadPRAction
+from .github_analyze_pr import GitHubAnalyzePRAction
+from .github_publish_review import GitHubPublishReviewAction
 
 __all__ = [
     "BaseAction",
@@ -13,5 +16,8 @@ __all__ = [
     "AnalyzeCodeAction",
     "GenerateTestsAction",
     "RunTestsAction",
-    "GenerateReportAction"
+    "GenerateReportAction",
+    "GitHubReadPRAction",
+    "GitHubAnalyzePRAction",
+    "GitHubPublishReviewAction"
 ]

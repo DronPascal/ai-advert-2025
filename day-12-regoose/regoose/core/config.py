@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     deepseek_model: str = Field("deepseek-chat", env="DEEPSEEK_MODEL")
     deepseek_max_tokens: int = Field(4096, env="DEEPSEEK_MAX_TOKENS")
     
+    # GitHub Configuration
+    github_token: Optional[str] = Field(None, env="GITHUB_TOKEN")
+    github_repo_owner: Optional[str] = Field(None, env="GITHUB_REPO_OWNER")  
+    github_repo_name: Optional[str] = Field(None, env="GITHUB_REPO_NAME")
+    
     # Local LLM Configuration (optional)
     local_llm_endpoint: Optional[str] = Field(None, env="LOCAL_LLM_ENDPOINT")
     local_llm_model: Optional[str] = Field(None, env="LOCAL_LLM_MODEL")
