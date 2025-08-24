@@ -10,7 +10,12 @@
   - Strong typing support with Pydantic
 
 ### AI & Language Models
-- **OpenAI API**: Primary LLM provider
+- **DeepSeek API**: Primary LLM provider (NEW)
+  - DeepSeek-Chat for comprehensive test generation
+  - DeepSeek-Coder for specialized code analysis
+  - OpenAI API compatibility for seamless integration
+  - Cost-effective alternative with excellent performance
+- **OpenAI API**: Secondary LLM provider
   - GPT-4o-mini for cost-effective test generation
   - GPT-4o for complex analysis when needed
   - Structured output support for reliable parsing
@@ -111,6 +116,7 @@ class LLMProvider(ABC):
 ```
 
 **Current Providers**:
+- **DeepSeek Provider**: Production-ready API integration with OpenAI compatibility (NEW)
 - **OpenAI Provider**: Production-ready API integration
 - **Local Provider**: Ollama/LM Studio support
 
