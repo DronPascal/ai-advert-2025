@@ -14,6 +14,7 @@ from ..actions.generate_report import GenerateReportAction
 from ..actions.github_read_pr import GitHubReadPRAction
 from ..actions.github_analyze_pr import GitHubAnalyzePRAction
 from ..actions.github_publish_review import GitHubPublishReviewAction
+from ..actions.mcp_pr_review import MCPPRReviewAction
 
 
 class ExecutionPlan:
@@ -46,6 +47,7 @@ class ActionOrchestrator:
             "github_read_pr": GitHubReadPRAction(self.llm_provider, self.tools),
             "github_analyze_pr": GitHubAnalyzePRAction(self.llm_provider, self.tools),
             "github_publish_review": GitHubPublishReviewAction(self.llm_provider, self.tools),
+            "mcp_pr_review": MCPPRReviewAction(self.llm_provider, self.tools),
         }
     
     async def execute_plan(self, plan: ExecutionPlan, initial_data: Dict[str, Any]) -> ActionContext:

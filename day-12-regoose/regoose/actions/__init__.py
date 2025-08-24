@@ -8,6 +8,7 @@ from .generate_report import GenerateReportAction
 from .github_read_pr import GitHubReadPRAction
 from .github_analyze_pr import GitHubAnalyzePRAction
 from .github_publish_review import GitHubPublishReviewAction
+from .mcp_pr_review import MCPPRReviewAction
 
 __all__ = [
     "BaseAction",
@@ -19,5 +20,6 @@ __all__ = [
     "GenerateReportAction",
     "GitHubReadPRAction",
     "GitHubAnalyzePRAction",
-    "GitHubPublishReviewAction"
+    "GitHubPublishReviewAction",
+    "MCPPRReviewAction"
 ]
