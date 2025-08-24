@@ -28,16 +28,29 @@ class OpenAIProvider(LLMProvider):
                 **kwargs
             )
             
-            return LLMResponse(
-                content=response.choices[0].message.content,
+            choice = response.choices[0]
+            message = choice.message
+            
+            # Handle tool calls
+            tool_calls = getattr(message, 'tool_calls', None)
+            content = message.content or ""  # Handle None content when tool calls are present
+            
+            response_obj = LLMResponse(
+                content=content,
                 tokens_used=response.usage.total_tokens if response.usage else None,
                 model=response.model,
                 metadata={
-                    "finish_reason": response.choices[0].finish_reason,
+                    "finish_reason": choice.finish_reason,
                     "created": response.created,
                     "id": response.id
                 }
             )
+            
+            # Add tool calls to response if they exist
+            if tool_calls:
+                response_obj.tool_calls = tool_calls
+                
+            return response_obj
         except Exception as e:
             raise RuntimeError(f"OpenAI API error: {str(e)}")
     

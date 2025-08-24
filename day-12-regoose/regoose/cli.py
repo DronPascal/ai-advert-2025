@@ -21,6 +21,8 @@ from .tools.github_tool import GitHubTool
 from .core.orchestrator import ActionOrchestrator
 from .scenarios.test_generation import TestGenerationScenario
 from .scenarios.github_pr_review import GitHubPRReviewScenario
+from .scenarios.mcp_pr_review import MCPGitHubPRReviewScenario
+from .providers.mcp_github_provider import MCPGitHubProvider
 
 app = typer.Typer(
     name="regoose",
@@ -88,6 +90,26 @@ def review_pr(
         "pr_number": pr_number,
         "provider": provider,
         "dry_run": dry_run,
+        "repo_owner": repo_owner,
+        "repo_name": repo_name
+    }))
+
+
+@app.command()
+def review_pr_mcp(
+    pr_number: int = typer.Argument(..., help="Pull Request number to review"),
+    provider: Optional[str] = typer.Option("openai", "--provider", "-p", help="Base LLM provider (openai, deepseek)"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Analysis only, do not publish review"),
+    debug: bool = typer.Option(False, "--debug", help="Enable verbose debug output"),
+    repo_owner: Optional[str] = typer.Option(None, "--repo-owner", help="Repository owner (overrides config)"),
+    repo_name: Optional[str] = typer.Option(None, "--repo-name", help="Repository name (overrides config)"),
+):
+    """Review a GitHub Pull Request using MCP GitHub tools integration."""
+    asyncio.run(_run_mcp_pr_review_scenario({
+        "pr_number": pr_number,
+        "provider": provider,
+        "dry_run": dry_run,
+        "debug": debug,
         "repo_owner": repo_owner,
         "repo_name": repo_name
     }))
@@ -338,6 +360,149 @@ async def _run_pr_review_scenario(params: dict):
                 console.print("\n[yellow]⚠️ Review analysis completed but publishing failed[/yellow]")
         else:
             console.print(f"\n[blue]ℹ️ Dry run completed. Use 'regoose review-pr {pr_number}' to publish review[/blue]")
+        
+    except Exception as e:
+        console.print(f"[red]Error: {str(e)}[/red]")
+        if settings.debug:
+            import traceback
+            console.print("[dim]" + traceback.format_exc() + "[/dim]")
+
+
+async def _run_mcp_pr_review_scenario(params: dict):
+    """Run the MCP GitHub PR review scenario."""
+    try:
+        # Get settings
+        settings = get_settings()
+        
+        # Check GitHub configuration
+        if not settings.github_token:
+            console.print("[red]Error: GITHUB_TOKEN not configured. Please add it to .env file[/red]")
+            return
+        
+        # Override repo settings if provided
+        repo_owner = params.get("repo_owner") or settings.github_repo_owner
+        repo_name = params.get("repo_name") or settings.github_repo_name
+        
+        if not repo_owner or not repo_name:
+            console.print("[red]Error: Repository owner and name must be configured[/red]")
+            console.print("Set GITHUB_REPO_OWNER and GITHUB_REPO_NAME in .env or use --repo-owner --repo-name")
+            return
+        
+        # Get base provider type and debug mode
+        provider = params.get("provider", "openai")
+        debug_mode = params.get("debug", False)
+        
+        # Create MCP GitHub Provider
+        try:
+            console.print(f"[yellow]Initializing MCP GitHub provider with {provider} base...[/yellow]")
+            mcp_provider = MCPGitHubProvider(provider, settings)
+            
+            # Enable debug mode if requested
+            if debug_mode:
+                mcp_provider.set_debug_mode(True)
+                console.print("[blue]🔍 Debug mode enabled - verbose output activated[/blue]")
+            
+            # Initialize MCP connection
+            if not await mcp_provider.initialize():
+                console.print("[red]Failed to initialize MCP GitHub provider[/red]")
+                return
+            
+            console.print(f"[green]MCP GitHub provider ready with model {mcp_provider.get_model_name()}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error creating MCP provider: {str(e)}[/red]")
+            return
+        
+        # Create tools (we still need basic tools for orchestrator)
+        tools = create_tools(settings, str(Path.cwd()), include_github=True)
+        
+        # Override GitHub tool settings if repo parameters provided
+        if params.get("repo_owner") or params.get("repo_name"):
+            tools["github"] = GitHubTool(
+                token=settings.github_token,
+                repo_owner=repo_owner,
+                repo_name=repo_name
+            )
+        
+        # Create orchestrator with MCP provider
+        orchestrator = ActionOrchestrator(mcp_provider, tools)
+        
+        # Create and execute MCP scenario
+        scenario = MCPGitHubPRReviewScenario(orchestrator)
+        
+        # Prepare input data
+        pr_number = params.get("pr_number")
+        dry_run = params.get("dry_run", False)
+        
+        input_data = {
+            "pr_number": pr_number,
+            "repo_owner": repo_owner,
+            "repo_name": repo_name,
+            "dry_run": dry_run,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        console.print(f"[bold blue]Starting MCP PR #{pr_number} review scenario...[/bold blue]")
+        console.print("[cyan]Using GitHub MCP tools for direct AI interaction[/cyan]")
+        if dry_run:
+            console.print("[yellow]Running in dry-run mode (analysis only, no publishing)[/yellow]")
+        
+        # Execute MCP scenario (dry_run handled in scenario)
+        if dry_run:
+            result = await scenario.execute_dry_run(input_data)
+        else:
+            result = await scenario.execute(input_data)
+        
+        if not result.success:
+            console.print(f"[red]MCP scenario failed: {result.error}[/red]")
+            return
+        
+        # Display results
+        context = result.context
+        overall_feedback = context.get("overall_feedback", "No feedback available")
+        score = context.get("score", 0)
+        review_comments = context.get("review_comments", [])
+        review_method = context.get("review_method", "MCP GitHub Tools")
+        
+        # Show summary
+        console.print(f"\n[bold]🤖 MCP Review Summary for PR #{pr_number}[/bold]")
+        console.print(f"**Method:** {review_method}")
+        console.print(f"**Score:** {score}/10")
+        console.print(f"**Issues Found:** {len(review_comments)}")
+        
+        # Show feedback
+        console.print(f"\n[bold]💭 MCP Analysis:[/bold]")
+        console.print(Panel(
+            overall_feedback,
+            border_style="cyan",
+            padding=(1, 2)
+        ))
+        
+        # Show line-specific comments
+        if review_comments:
+            console.print(f"\n[bold]📝 MCP Comments ({len(review_comments)}):[/bold]")
+            for i, comment in enumerate(review_comments[:5], 1):  # Show first 5
+                severity_color = {"error": "red", "warning": "yellow", "suggestion": "blue"}.get(
+                    comment.get("severity", "suggestion"), "white"
+                )
+                console.print(f"\n[{severity_color}]{i}. {comment.get('filename')}:{comment.get('line_number')}[/{severity_color}]")
+                console.print(f"   {comment.get('message', 'No message')}")
+                if comment.get("suggestion"):
+                    console.print(f"   💡 {comment['suggestion']}")
+            
+            if len(review_comments) > 5:
+                console.print(f"\n[dim]... and {len(review_comments) - 5} more comments[/dim]")
+        
+        if dry_run:
+            console.print(f"\n[green]✅ MCP PR analysis completed successfully![/green]")
+            console.print("[yellow]ℹ️ Dry run completed. Use 'regoose review-pr-mcp {pr_number}' to publish review[/yellow]")
+        else:
+            console.print(f"\n[green]✅ MCP GitHub PR review completed and published![/green]")
+        
+        console.print(f"[blue]🔗 View PR: https://github.com/{repo_owner}/{repo_name}/pull/{pr_number}[/blue]")
+        
+        # Cleanup MCP provider
+        mcp_provider.cleanup()
         
     except Exception as e:
         console.print(f"[red]Error: {str(e)}[/red]")

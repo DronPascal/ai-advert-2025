@@ -11,6 +11,7 @@ class LLMResponse(BaseModel):
     tokens_used: Optional[int] = None
     model: Optional[str] = None
     metadata: Dict[str, Any] = {}
+    tool_calls: Optional[List[Any]] = None
 
 
 class LLMProvider(ABC):
