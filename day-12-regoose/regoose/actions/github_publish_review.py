@@ -74,9 +74,11 @@ class GitHubPublishReviewAction(BaseAction):
             if not review_result.success:
                 return ActionResult.error_result(f"Failed to create review: {review_result.output}")
             
+            review_data = github_tool.get_last_data()
+            
             return ActionResult.success_result(
                 data={
-                    "review_id": review_result.output.get("id"),
+                    "review_id": review_data.get("id") if review_data else None,
                     "review_body": review_body,
                     "line_comments_count": len(line_comments),
                     "total_comments_attempted": len(review_comments),

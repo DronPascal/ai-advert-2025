@@ -2,10 +2,27 @@
 
 import os
 from typing import Dict, List, Optional, Any
+from dataclasses import dataclass
 from github import Github, Repository, PullRequest
 from github.GithubException import GithubException
 
 from .base import BaseTool, ToolResult
+
+
+@dataclass
+class GitHubResult:
+    """GitHub operation result with structured data."""
+    success: bool
+    data: Any = None
+    error: str = None
+    
+    @property
+    def output(self) -> str:
+        """Convert to string for ToolResult compatibility."""
+        if self.success:
+            return f"Success: {type(self.data).__name__} data available"
+        else:
+            return f"Error: {self.error}"
 
 
 class GitHubTool(BaseTool):
@@ -16,6 +33,14 @@ class GitHubTool(BaseTool):
         self.repo_owner = repo_owner
         self.repo_name = repo_name
         self._repo = None
+    
+    def get_name(self) -> str:
+        """Get tool name."""
+        return "github"
+    
+    def get_description(self) -> str:
+        """Get tool description."""
+        return f"GitHub API tool for repository {self.repo_owner}/{self.repo_name}"
     
     @property
     def repo(self) -> Repository.Repository:
@@ -28,11 +53,11 @@ class GitHubTool(BaseTool):
         """Execute GitHub operation."""
         try:
             if action == "get_pull_request":
-                return await self._get_pull_request(kwargs.get("pr_number"))
+                result = await self._get_pull_request(kwargs.get("pr_number"))
             elif action == "get_pr_files":
-                return await self._get_pr_files(kwargs.get("pr_number"))
+                result = await self._get_pr_files(kwargs.get("pr_number"))
             elif action == "create_review_comment":
-                return await self._create_review_comment(
+                result = await self._create_review_comment(
                     kwargs.get("pr_number"),
                     kwargs.get("body"),
                     kwargs.get("commit_sha"),
@@ -40,29 +65,33 @@ class GitHubTool(BaseTool):
                     kwargs.get("position")
                 )
             elif action == "create_review":
-                return await self._create_review(
+                result = await self._create_review(
                     kwargs.get("pr_number"),
                     kwargs.get("body"),
                     kwargs.get("event", "COMMENT"),
                     kwargs.get("comments", [])
                 )
             else:
-                return ToolResult(
-                    success=False,
-                    output=f"Unknown action: {action}"
-                )
+                result = GitHubResult(success=False, error=f"Unknown action: {action}")
+            
+            # Store data in a way that actions can access it
+            self._last_result = result
+            return ToolResult(success=result.success, output=result.output)
+            
         except GithubException as e:
-            return ToolResult(
-                success=False,
-                output=f"GitHub API error: {e.data.get('message', str(e))}"
-            )
+            error_msg = f"GitHub API error: {e.data.get('message', str(e)) if hasattr(e, 'data') else str(e)}"
+            self._last_result = GitHubResult(success=False, error=error_msg)
+            return ToolResult(success=False, output=error_msg)
         except Exception as e:
-            return ToolResult(
-                success=False,
-                output=f"Error: {str(e)}"
-            )
+            error_msg = f"Error: {str(e)}"
+            self._last_result = GitHubResult(success=False, error=error_msg)
+            return ToolResult(success=False, output=error_msg)
     
-    async def _get_pull_request(self, pr_number: int) -> ToolResult:
+    def get_last_data(self) -> Any:
+        """Get the data from the last operation."""
+        return getattr(self, '_last_result', GitHubResult(success=False, error="No data")).data
+    
+    async def _get_pull_request(self, pr_number: int) -> GitHubResult:
         """Get pull request details."""
         pr = self.repo.get_pull(pr_number)
         
@@ -81,12 +110,9 @@ class GitHubTool(BaseTool):
             "changed_files": pr.changed_files
         }
         
-        return ToolResult(
-            success=True,
-            output=pr_data
-        )
+        return GitHubResult(success=True, data=pr_data)
     
-    async def _get_pr_files(self, pr_number: int) -> ToolResult:
+    async def _get_pr_files(self, pr_number: int) -> GitHubResult:
         """Get files changed in pull request."""
         pr = self.repo.get_pull(pr_number)
         files = []
@@ -114,10 +140,7 @@ class GitHubTool(BaseTool):
             
             files.append(file_data)
         
-        return ToolResult(
-            success=True,
-            output=files
-        )
+        return GitHubResult(success=True, data=files)
     
     async def _create_review_comment(
         self, 
@@ -126,7 +149,7 @@ class GitHubTool(BaseTool):
         commit_sha: str, 
         path: str, 
         position: int
-    ) -> ToolResult:
+    ) -> GitHubResult:
         """Create a review comment on specific line."""
         pr = self.repo.get_pull(pr_number)
         
@@ -137,9 +160,9 @@ class GitHubTool(BaseTool):
             position=position
         )
         
-        return ToolResult(
+        return GitHubResult(
             success=True,
-            output={
+            data={
                 "id": comment.id,
                 "body": comment.body,
                 "path": comment.path,
@@ -154,7 +177,7 @@ class GitHubTool(BaseTool):
         body: str,
         event: str = "COMMENT",
         comments: List[Dict[str, Any]] = None
-    ) -> ToolResult:
+    ) -> GitHubResult:
         """Create a pull request review."""
         pr = self.repo.get_pull(pr_number)
         
@@ -173,9 +196,9 @@ class GitHubTool(BaseTool):
             comments=review_comments
         )
         
-        return ToolResult(
+        return GitHubResult(
             success=True,
-            output={
+            data={
                 "id": review.id,
                 "body": review.body,
                 "state": review.state,

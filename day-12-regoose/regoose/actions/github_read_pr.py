@@ -33,14 +33,14 @@ class GitHubReadPRAction(BaseAction):
             if not pr_result.success:
                 return ActionResult.error_result(f"Failed to get PR details: {pr_result.output}")
             
-            pr_data = pr_result.output
+            pr_data = github_tool.get_last_data()
             
             # Get PR files
             files_result = await github_tool.execute("get_pr_files", pr_number=pr_number)
             if not files_result.success:
                 return ActionResult.error_result(f"Failed to get PR files: {files_result.output}")
             
-            files_data = files_result.output
+            files_data = github_tool.get_last_data()
             
             # Filter only relevant files (code files, not images/binaries)
             code_files = []
