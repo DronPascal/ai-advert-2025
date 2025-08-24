@@ -1,10 +1,9 @@
-"""New CLI interface using Action/Scenario architecture."""
+"""Command-line interface for Regoose."""
 
 import asyncio
 import sys
 from pathlib import Path
 from typing import Optional
-from datetime import datetime
 
 import typer
 from rich.console import Console
@@ -12,33 +11,16 @@ from rich.panel import Panel
 from rich.prompt import Prompt, Confirm
 from rich.markdown import Markdown
 
+from .core.agent import RegooseAgent
 from .core.config import get_settings
 from .providers.factory import LLMProviderFactory
-from .tools.filesystem_tool import FilesystemTool
-from .tools.shell_tool import ShellTool
-from .tools.container_tool import ContainerTool
-from .core.orchestrator import ActionOrchestrator
-from .scenarios.test_generation import TestGenerationScenario
 
 app = typer.Typer(
     name="regoose",
-    help="AI-powered test generation agent with Action/Scenario architecture",
+    help="AI-powered test generation agent",
     add_completion=False
 )
 console = Console()
-
-
-def create_tools(settings, working_dir: str = "."):
-    """Create tools for orchestrator."""
-    return {
-        "filesystem": FilesystemTool(working_dir),
-        "shell": ShellTool(working_dir),
-        "container": ContainerTool(
-            runtime=settings.container_runtime,
-            base_image=settings.container_image
-        ),
-        "working_dir": working_dir
-    }
 
 
 @app.command()
@@ -49,18 +31,9 @@ def generate(
     framework: Optional[str] = typer.Option(None, "--framework", help="Testing framework"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file for report"),
     provider: Optional[str] = typer.Option(None, "--provider", "-p", help="LLM provider (openai, deepseek, local, auto)"),
-    max_iterations: int = typer.Option(3, "--max-iterations", help="Maximum improvement iterations"),
 ):
-    """Generate tests using test generation scenario."""
-    asyncio.run(_run_test_generation_scenario({
-        "code": code,
-        "file": file,
-        "language": language,
-        "framework": framework,
-        "output": output,
-        "provider": provider,
-        "max_iterations": max_iterations
-    }))
+    """Generate tests for provided code."""
+    asyncio.run(_generate_tests(code, file, language, framework, output, provider))
 
 
 @app.command()
@@ -75,14 +48,20 @@ def setup():
     _setup_configuration()
 
 
-async def _run_test_generation_scenario(params: dict):
-    """Run the test generation scenario."""
+async def _generate_tests(
+    code: Optional[str],
+    file: Optional[Path],
+    language: Optional[str],
+    framework: Optional[str],
+    output: Optional[Path],
+    provider: Optional[str]
+):
+    """Generate tests implementation."""
     try:
         # Get settings
         settings = get_settings()
         
         # Determine provider
-        provider = params.get("provider")
         if not provider:
             # Auto-select provider based on available API keys
             available_providers = LLMProviderFactory.get_available_providers(settings)
@@ -91,7 +70,7 @@ async def _run_test_generation_scenario(params: dict):
                 return
             provider = available_providers[0]  # Use first available provider
         
-        # Initialize LLM provider
+        # Initialize agent
         try:
             llm_provider = LLMProviderFactory.create_provider(provider, settings)
             console.print(f"[green]Using {provider} provider with model {llm_provider.get_model_name()}[/green]")
@@ -99,10 +78,9 @@ async def _run_test_generation_scenario(params: dict):
             console.print(f"[red]Error creating {provider} provider: {str(e)}[/red]")
             return
         
-        # Get code input
-        code = params.get("code")
-        file = params.get("file")
+        agent = RegooseAgent(llm_provider, settings)
         
+        # Get code input
         if file:
             if not file.exists():
                 console.print(f"[red]Error: File {file} not found[/red]")
@@ -120,57 +98,77 @@ async def _run_test_generation_scenario(params: dict):
             border_style="blue"
         ))
         
-        # Create tools and orchestrator
-        tools = create_tools(settings, str(Path.cwd()))
-        orchestrator = ActionOrchestrator(llm_provider, tools)
+        # Generate tests
+        console.print("[bold blue]Starting test generation...[/bold blue]")
+        tests, analysis = await agent.analyze_and_generate_tests(code, language, framework)
         
-        # Create and execute scenario
-        scenario = TestGenerationScenario(orchestrator)
-        
-        # Prepare input data
-        input_data = {
-            "code": code,
-            "language": params.get("language"),
-            "framework": params.get("framework"),
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        console.print("[bold blue]Starting test generation scenario...[/bold blue]")
-        
-        # Execute scenario with improvements
-        max_iterations = params.get("max_iterations", 3)
-        result = await scenario.execute_with_improvements(input_data, max_iterations)
-        
-        if not result.success:
-            console.print(f"[red]Scenario failed: {result.error}[/red]")
+        if not tests:
+            console.print("[red]No tests were generated![/red]")
             return
         
-        # Display results
-        context = result.context
-        test_results = context.get("test_results", [])
+        # Display analysis
+        console.print(Panel(analysis, title="Analysis", border_style="green"))
         
-        # Calculate and display summary
-        total_tests = sum(r.passed + r.failed + r.errors for r in test_results)
-        total_passed = sum(r.passed for r in test_results)
-        total_failed = sum(r.failed for r in test_results)
+        # Run tests with iterative improvement
+        max_iterations = 3
+        iteration = 1
         
-        if total_passed == total_tests and total_tests > 0:
-            console.print(f"[green]✅ All {total_tests} tests passed![/green]")
-        elif total_tests > 0:
-            console.print(f"[yellow]⚠️ {total_passed}/{total_tests} tests passed, {total_failed} failed after {max_iterations} iterations[/yellow]")
-        else:
-            console.print("[red]❌ No tests executed[/red]")
+        while iteration <= max_iterations:
+            console.print(f"[bold blue]Running generated tests... (Iteration {iteration})[/bold blue]")
+            results = await agent.run_tests_in_container(tests)
+            
+            # Check if all tests passed
+            total_tests = sum(r.passed + r.failed + r.errors for r in results)
+            total_passed = sum(r.passed for r in results)
+            total_failed = sum(r.failed for r in results)
+            
+            if total_passed == total_tests and total_tests > 0:
+                console.print(f"[green]✅ All {total_tests} tests passed![/green]")
+                break
+            elif total_tests > 0 and iteration < max_iterations:
+                console.print(f"[yellow]⚠️  {total_passed}/{total_tests} tests passed, {total_failed} failed[/yellow]")
+                
+                # Analyze failures and regenerate tests
+                console.print("[bold yellow]🔄 Analyzing test failures and regenerating...[/bold yellow]")
+                
+                # Extract failure information
+                failure_info = []
+                for result in results:
+                    if result.failed > 0 and result.details:
+                        for detail in result.details:
+                            if isinstance(detail, dict) and 'raw_output' in detail:
+                                failure_info.append(detail['raw_output'])
+                
+                # Regenerate tests with failure context
+                improved_tests, new_analysis = await agent.improve_tests_from_failures(
+                    code, tests, failure_info, language, framework
+                )
+                
+                if improved_tests:
+                    tests = improved_tests
+                    console.print(Panel(new_analysis, title="Improved Analysis", border_style="yellow"))
+                    iteration += 1
+                else:
+                    console.print("[red]❌ Could not improve tests automatically[/red]")
+                    break
+            else:
+                if total_tests > 0:
+                    console.print(f"[red]❌ {total_passed}/{total_tests} tests passed after {max_iterations} iterations[/red]")
+                else:
+                    console.print("[red]❌ No tests executed[/red]")
+                break
         
-        # Show report
-        report = context.get("report")
-        output = params.get("output")
+        # Generate final report
+        report = await agent.generate_report(tests, results)
         
-        if output and report:
+        # Save report
+        if output:
             output.write_text(report)
             console.print(f"[green]Report saved to {output}[/green]")
-        elif report:
+        else:
             # Display report
             console.print("[bold]Generated Report:[/bold]")
+            # Pretty print the report in a panel
             console.print(Panel(
                 Markdown(report),
                 title="📊 Test Report", 
@@ -206,6 +204,8 @@ async def _interactive_mode():
         provider = available_providers[0]  # Use first available provider
         llm_provider = LLMProviderFactory.create_provider(provider, settings)
         console.print(f"[green]Using {provider} provider with model {llm_provider.get_model_name()}[/green]")
+        
+        agent = RegooseAgent(llm_provider, settings)
         
         while True:
             console.print("[bold]Options:[/bold]")
@@ -244,13 +244,80 @@ async def _interactive_mode():
                 console.print("[yellow]No code provided, try again.[/yellow]")
                 continue
             
-            # Run test generation scenario
+            # Generate and run tests
             try:
-                await _run_test_generation_scenario({
-                    "code": code,
-                    "provider": provider,
-                    "max_iterations": 3
-                })
+                tests, analysis = await agent.analyze_and_generate_tests(code)
+                console.print(Panel(analysis, title="Analysis", border_style="green"))
+                
+                if Confirm.ask("Run the generated tests?", default=True):
+                    # Run tests with iterative improvement (same as CLI)
+                    max_iterations = 3
+                    iteration = 1
+                    
+                    while iteration <= max_iterations:
+                        console.print(f"[bold blue]Running tests... (Iteration {iteration})[/bold blue]")
+                        results = await agent.run_tests_in_container(tests)
+                        
+                        total_tests = sum(r.passed + r.failed + r.errors for r in results)
+                        total_passed = sum(r.passed for r in results)
+                        total_failed = sum(r.failed for r in results)
+                        
+                        if total_passed == total_tests and total_tests > 0:
+                            console.print(f"[green]✅ All {total_tests} tests passed![/green]")
+                            break
+                        elif total_tests > 0 and iteration < max_iterations:
+                            console.print(f"[yellow]⚠️  {total_passed}/{total_tests} tests passed, {total_failed} failed[/yellow]")
+                            
+                            if Confirm.ask("Try to improve tests automatically?", default=True):
+                                console.print("[bold yellow]🔄 Analyzing failures and regenerating...[/bold yellow]")
+                                
+                                # Extract failure information
+                                failure_info = []
+                                for result in results:
+                                    if result.failed > 0 and result.details:
+                                        for detail in result.details:
+                                            if isinstance(detail, dict) and 'raw_output' in detail:
+                                                failure_info.append(detail['raw_output'])
+                                
+                                # Regenerate tests with failure context
+                                improved_tests, new_analysis = await agent.improve_tests_from_failures(
+                                    code, tests, failure_info
+                                )
+                                
+                                if improved_tests:
+                                    tests = improved_tests
+                                    console.print(Panel(new_analysis, title="Improved Analysis", border_style="yellow"))
+                                    iteration += 1
+                                else:
+                                    console.print("[red]❌ Could not improve tests automatically[/red]")
+                                    break
+                            else:
+                                break
+                        else:
+                            if total_tests > 0:
+                                console.print(f"[red]❌ {total_passed}/{total_tests} tests passed after {max_iterations} iterations[/red]")
+                            else:
+                                console.print("[red]❌ No tests executed[/red]")
+                            break
+                    
+                    # Generate final report
+                    report = await agent.generate_report(tests, results)
+                    console.print(f"[bold]Results: {total_passed}/{total_tests} tests passed[/bold]")
+                    
+                    if Confirm.ask("View full report?", default=False):
+                        console.print(Panel(
+                            Markdown(report),
+                            title="📊 Detailed Test Report", 
+                            border_style="cyan",
+                            expand=False,
+                            padding=(1, 2)
+                        ))
+                    
+                    if Confirm.ask("Save report to file?", default=False):
+                        filename = Prompt.ask("Enter filename", default="regoose_report.md")
+                        Path(filename).write_text(report)
+                        console.print(f"[green]Report saved to {filename}[/green]")
+            
             except Exception as e:
                 console.print(f"[red]Error: {str(e)}[/red]")
     
