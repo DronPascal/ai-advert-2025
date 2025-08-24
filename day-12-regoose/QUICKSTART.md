@@ -6,7 +6,8 @@ Get up and running with Regoose in 5 minutes!
 
 - Python 3.10+ installed
 - Podman or Docker installed
-- OpenAI API key
+- OpenAI API key (or DeepSeek API key)
+- GitHub Personal Access Token (for PR reviews)
 
 ## Installation
 
@@ -24,19 +25,32 @@ Get up and running with Regoose in 5 minutes!
    ```bash
    regoose setup
    ```
-   Enter your OpenAI API key when prompted.
+   Configure your LLM provider (OpenAI/DeepSeek) and optionally GitHub integration for PR reviews.
 
-4. **Install MCP servers (optional but recommended)**
+4. **Install MCP servers (for GitHub integration)**
    ```bash
+   npm install -g @modelcontextprotocol/server-github
    python scripts/install_mcp.py
    ```
 
 ## Quick Test
 
-Generate tests for a simple function:
-
+### Generate Tests
 ```bash
+# Generate tests with OpenAI
 regoose generate --code "def add(a, b): return a + b"
+
+# Generate tests with DeepSeek
+regoose generate --code "def add(a, b): return a + b" --provider deepseek
+```
+
+### GitHub PR Review (Revolutionary!)
+```bash
+# Traditional PR review
+regoose review-pr 123 --dry-run
+
+# Revolutionary MCP-powered PR review with AI autonomy
+regoose review-pr-mcp 123 --provider openai --debug
 ```
 
 ## Interactive Mode
@@ -73,17 +87,28 @@ Run the built-in demo:
 
 ## What happens?
 
+### Test Generation Flow:
 1. **Analysis**: AI analyzes your code structure and functionality
 2. **Generation**: Creates comprehensive tests with edge cases
 3. **Execution**: Runs tests in isolated Podman container
-4. **Report**: Generates detailed Markdown report with results
+4. **Iteration**: AI learns from failures and improves tests automatically
+5. **Report**: Generates detailed Markdown report with results
+
+### GitHub PR Review Flow:
+1. **PR Analysis**: AI reads pull request and changed files
+2. **Code Review**: Analyzes code quality, patterns, and potential issues
+3. **Line-Specific Comments**: Places precise feedback on exact code lines
+4. **Intelligent Scoring**: Provides 1-10 rating with severity classification
+5. **Publication**: Publishes review directly to GitHub via MCP tools
 
 ## Next Steps
 
-- Explore different programming languages
-- Try the interactive mode
-- Check out `examples/` directory
-- Read the full documentation in `README.md`
+- **Explore GitHub Integration**: Set up PR reviews for your repositories
+- **Try Multi-Provider Support**: Compare OpenAI vs DeepSeek results
+- **Use Debug Mode**: `--debug` flag for detailed MCP operation logs
+- **Try Interactive Mode**: Real-time AI conversation for test generation
+- **Explore Examples**: Check out `examples/` directory
+- **Read Full Documentation**: `README.md` and `ARCHITECTURE.md`
 
 ## Troubleshooting
 
@@ -92,8 +117,19 @@ Run the built-in demo:
 - Check container runtime in `.env`: `CONTAINER_RUNTIME=podman`
 
 **API errors?**
-- Verify your OpenAI API key in `.env`
+- Verify your OpenAI/DeepSeek API key in `.env`
 - Check your account has sufficient credits
+
+**GitHub integration errors?**
+- Verify `GITHUB_TOKEN` in `.env` (Personal Access Token)
+- Ensure token has repo read/write permissions
+- Install GitHub MCP server: `npm install -g @modelcontextprotocol/server-github`
+- Use `--debug` flag to see detailed MCP operations
+
+**MCP errors?**
+- Check if MCP server is installed: `which npx`
+- Verify GitHub token permissions (pull requests scope required)
+- Try `--dry-run` mode first to test without publishing
 
 **Import errors?**
 - Make sure you installed with: `pip install -e .`
