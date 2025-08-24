@@ -13,7 +13,7 @@ from rich.markdown import Markdown
 
 from .core.agent import RegooseAgent
 from .core.config import get_settings
-from .providers.openai_provider import OpenAIProvider
+from .providers.factory import LLMProviderFactory
 
 app = typer.Typer(
     name="regoose",
@@ -30,9 +30,10 @@ def generate(
     language: Optional[str] = typer.Option(None, "--language", "-l", help="Programming language"),
     framework: Optional[str] = typer.Option(None, "--framework", help="Testing framework"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file for report"),
+    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="LLM provider (openai, deepseek, local, auto)"),
 ):
     """Generate tests for provided code."""
-    asyncio.run(_generate_tests(code, file, language, framework, output))
+    asyncio.run(_generate_tests(code, file, language, framework, output, provider))
 
 
 @app.command()
@@ -52,19 +53,30 @@ async def _generate_tests(
     file: Optional[Path],
     language: Optional[str],
     framework: Optional[str],
-    output: Optional[Path]
+    output: Optional[Path],
+    provider: Optional[str]
 ):
     """Generate tests implementation."""
     try:
         # Get settings
         settings = get_settings()
         
+        # Determine provider
+        if not provider:
+            # Auto-select provider based on available API keys
+            available_providers = LLMProviderFactory.get_available_providers(settings)
+            if not available_providers:
+                console.print("[red]Error: No LLM providers configured. Please set OPENAI_API_KEY or DEEPSEEK_API_KEY[/red]")
+                return
+            provider = available_providers[0]  # Use first available provider
+        
         # Initialize agent
-        llm_provider = OpenAIProvider(
-            api_key=settings.openai_api_key,
-            model=settings.openai_model,
-            max_tokens=settings.openai_max_tokens
-        )
+        try:
+            llm_provider = LLMProviderFactory.create_provider(provider, settings)
+            console.print(f"[green]Using {provider} provider with model {llm_provider.get_model_name()}[/green]")
+        except Exception as e:
+            console.print(f"[red]Error creating {provider} provider: {str(e)}[/red]")
+            return
         
         agent = RegooseAgent(llm_provider, settings)
         
@@ -182,11 +194,17 @@ async def _interactive_mode():
     
     try:
         settings = get_settings()
-        llm_provider = OpenAIProvider(
-            api_key=settings.openai_api_key,
-            model=settings.openai_model,
-            max_tokens=settings.openai_max_tokens
-        )
+        
+        # Auto-select provider
+        available_providers = LLMProviderFactory.get_available_providers(settings)
+        if not available_providers:
+            console.print("[red]Error: No LLM providers configured. Please set OPENAI_API_KEY or DEEPSEEK_API_KEY[/red]")
+            return
+        
+        provider = available_providers[0]  # Use first available provider
+        llm_provider = LLMProviderFactory.create_provider(provider, settings)
+        console.print(f"[green]Using {provider} provider with model {llm_provider.get_model_name()}[/green]")
+        
         agent = RegooseAgent(llm_provider, settings)
         
         while True:
@@ -319,18 +337,40 @@ def _setup_configuration():
     env_file = Path(".env")
     env_content = []
     
-    # OpenAI API Key
-    api_key = Prompt.ask("Enter your OpenAI API key", password=True)
-    if api_key:
-        env_content.append(f"OPENAI_API_KEY={api_key}")
-    
-    # Model selection
-    model = Prompt.ask(
-        "Choose OpenAI model", 
-        choices=["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
-        default="gpt-4o-mini"
+    # Provider selection
+    provider_choice = Prompt.ask(
+        "Choose LLM provider",
+        choices=["openai", "deepseek", "both"],
+        default="deepseek"
     )
-    env_content.append(f"OPENAI_MODEL={model}")
+    
+    if provider_choice in ["openai", "both"]:
+        # OpenAI API Key
+        openai_key = Prompt.ask("Enter your OpenAI API key (optional)", password=True, default="")
+        if openai_key:
+            env_content.append(f"OPENAI_API_KEY={openai_key}")
+        
+        # OpenAI Model selection
+        openai_model = Prompt.ask(
+            "Choose OpenAI model", 
+            choices=["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
+            default="gpt-4o-mini"
+        )
+        env_content.append(f"OPENAI_MODEL={openai_model}")
+    
+    if provider_choice in ["deepseek", "both"]:
+        # DeepSeek API Key
+        deepseek_key = Prompt.ask("Enter your DeepSeek API key (optional)", password=True, default="")
+        if deepseek_key:
+            env_content.append(f"DEEPSEEK_API_KEY={deepseek_key}")
+        
+        # DeepSeek Model selection
+        deepseek_model = Prompt.ask(
+            "Choose DeepSeek model",
+            choices=["deepseek-chat", "deepseek-coder"],
+            default="deepseek-chat"
+        )
+        env_content.append(f"DEEPSEEK_MODEL={deepseek_model}")
     
     # Container runtime
     runtime = Prompt.ask(

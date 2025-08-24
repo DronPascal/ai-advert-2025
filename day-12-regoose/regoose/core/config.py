@@ -10,9 +10,14 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
     # OpenAI Configuration
-    openai_api_key: str = Field(..., env="OPENAI_API_KEY")
+    openai_api_key: Optional[str] = Field(None, env="OPENAI_API_KEY")
     openai_model: str = Field("gpt-4o-mini", env="OPENAI_MODEL")
     openai_max_tokens: int = Field(4096, env="OPENAI_MAX_TOKENS")
+    
+    # DeepSeek Configuration
+    deepseek_api_key: Optional[str] = Field(None, env="DEEPSEEK_API_KEY")
+    deepseek_model: str = Field("deepseek-chat", env="DEEPSEEK_MODEL")
+    deepseek_max_tokens: int = Field(4096, env="DEEPSEEK_MAX_TOKENS")
     
     # Local LLM Configuration (optional)
     local_llm_endpoint: Optional[str] = Field(None, env="LOCAL_LLM_ENDPOINT")

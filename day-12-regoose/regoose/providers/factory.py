@@ -3,6 +3,7 @@
 from typing import Union, Optional
 from .base import LLMProvider
 from .openai_provider import OpenAIProvider
+from .deepseek_provider import DeepSeekProvider
 from .local_provider import LocalLLMProvider
 from ..core.config import Settings
 
@@ -23,6 +24,13 @@ class LLMProviderFactory:
                 api_key=settings.openai_api_key,
                 model=settings.openai_model,
                 max_tokens=settings.openai_max_tokens
+            )
+        
+        elif provider_type.lower() == "deepseek":
+            return DeepSeekProvider(
+                api_key=settings.deepseek_api_key,
+                model=settings.deepseek_model,
+                max_tokens=settings.deepseek_max_tokens
             )
         
         elif provider_type.lower() == "local":
@@ -63,6 +71,10 @@ class LLMProviderFactory:
         # Check OpenAI
         if settings.openai_api_key:
             providers.append("openai")
+        
+        # Check DeepSeek
+        if settings.deepseek_api_key:
+            providers.append("deepseek")
         
         # Check local LLM
         if settings.local_llm_endpoint:
