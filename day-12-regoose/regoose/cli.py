@@ -17,8 +17,10 @@ from .providers.factory import LLMProviderFactory
 from .tools.filesystem_tool import FilesystemTool
 from .tools.shell_tool import ShellTool
 from .tools.container_tool import ContainerTool
+from .tools.github_tool import GitHubTool
 from .core.orchestrator import ActionOrchestrator
 from .scenarios.test_generation import TestGenerationScenario
+from .scenarios.github_pr_review import GitHubPRReviewScenario
 
 app = typer.Typer(
     name="regoose",
@@ -28,9 +30,9 @@ app = typer.Typer(
 console = Console()
 
 
-def create_tools(settings, working_dir: str = "."):
+def create_tools(settings, working_dir: str = ".", include_github: bool = False):
     """Create tools for orchestrator."""
-    return {
+    tools = {
         "filesystem": FilesystemTool(working_dir),
         "shell": ShellTool(working_dir),
         "container": ContainerTool(
@@ -39,6 +41,16 @@ def create_tools(settings, working_dir: str = "."):
         ),
         "working_dir": working_dir
     }
+    
+    # Add GitHub tool if requested and configured
+    if include_github and settings.github_token:
+        tools["github"] = GitHubTool(
+            token=settings.github_token,
+            repo_owner=settings.github_repo_owner or "DronPascal",
+            repo_name=settings.github_repo_name or "ai-advert-2025"
+        )
+    
+    return tools
 
 
 @app.command()
@@ -60,6 +72,24 @@ def generate(
         "output": output,
         "provider": provider,
         "max_iterations": max_iterations
+    }))
+
+
+@app.command()
+def review_pr(
+    pr_number: int = typer.Argument(..., help="Pull Request number to review"),
+    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="LLM provider (openai, deepseek, local, auto)"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Analyze only, don't publish review"),
+    repo_owner: Optional[str] = typer.Option(None, "--repo-owner", help="Repository owner (overrides config)"),
+    repo_name: Optional[str] = typer.Option(None, "--repo-name", help="Repository name (overrides config)"),
+):
+    """Review a GitHub Pull Request using AI analysis."""
+    asyncio.run(_run_pr_review_scenario({
+        "pr_number": pr_number,
+        "provider": provider,
+        "dry_run": dry_run,
+        "repo_owner": repo_owner,
+        "repo_name": repo_name
     }))
 
 
@@ -186,6 +216,136 @@ async def _run_test_generation_scenario(params: dict):
             console.print("[dim]" + traceback.format_exc() + "[/dim]")
 
 
+async def _run_pr_review_scenario(params: dict):
+    """Run the GitHub PR review scenario."""
+    try:
+        # Get settings
+        settings = get_settings()
+        
+        # Check GitHub configuration
+        if not settings.github_token:
+            console.print("[red]Error: GITHUB_TOKEN not configured. Please add it to .env file[/red]")
+            return
+        
+        # Override repo settings if provided
+        repo_owner = params.get("repo_owner") or settings.github_repo_owner
+        repo_name = params.get("repo_name") or settings.github_repo_name
+        
+        if not repo_owner or not repo_name:
+            console.print("[red]Error: Repository owner and name must be configured[/red]")
+            console.print("Set GITHUB_REPO_OWNER and GITHUB_REPO_NAME in .env or use --repo-owner --repo-name")
+            return
+        
+        # Determine provider
+        provider = params.get("provider")
+        if not provider:
+            # Auto-select provider based on available API keys
+            available_providers = LLMProviderFactory.get_available_providers(settings)
+            if not available_providers:
+                console.print("[red]Error: No LLM providers configured. Please set OPENAI_API_KEY or DEEPSEEK_API_KEY[/red]")
+                return
+            provider = available_providers[0]  # Use first available provider
+        
+        # Initialize LLM provider
+        try:
+            llm_provider = LLMProviderFactory.create_provider(provider, settings)
+            console.print(f"[green]Using {provider} provider with model {llm_provider.get_model_name()}[/green]")
+        except Exception as e:
+            console.print(f"[red]Error creating {provider} provider: {str(e)}[/red]")
+            return
+        
+        # Create tools with GitHub integration
+        tools = create_tools(settings, str(Path.cwd()), include_github=True)
+        
+        # Override GitHub tool settings if repo parameters provided
+        if params.get("repo_owner") or params.get("repo_name"):
+            tools["github"] = GitHubTool(
+                token=settings.github_token,
+                repo_owner=repo_owner,
+                repo_name=repo_name
+            )
+        
+        # Create orchestrator
+        orchestrator = ActionOrchestrator(llm_provider, tools)
+        
+        # Create and execute scenario
+        scenario = GitHubPRReviewScenario(orchestrator)
+        
+        # Prepare input data
+        pr_number = params.get("pr_number")
+        input_data = {
+            "pr_number": pr_number,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        console.print(f"[bold blue]Starting PR #{pr_number} review scenario...[/bold blue]")
+        
+        # Execute scenario (dry run or full review)
+        if params.get("dry_run"):
+            console.print("[yellow]Running in dry-run mode (analysis only, no publishing)[/yellow]")
+            result = await scenario.execute_dry_run(input_data)
+        else:
+            result = await scenario.execute(input_data)
+        
+        if not result.success:
+            console.print(f"[red]Scenario failed: {result.error}[/red]")
+            return
+        
+        # Display results
+        context = result.context
+        pr_info = context.get("pr_info", {})
+        review_comments = context.get("review_comments", [])
+        overall_feedback = context.get("overall_feedback", "No feedback available")
+        score = context.get("score", 0)
+        
+        # Show summary
+        console.print(f"\n[bold]📊 Review Summary for PR #{pr_number}[/bold]")
+        console.print(f"**Title:** {pr_info.get('title', 'N/A')}")
+        console.print(f"**Author:** {pr_info.get('user', 'N/A')}")
+        console.print(f"**Score:** {score}/10")
+        console.print(f"**Issues Found:** {len(review_comments)}")
+        
+        # Show feedback
+        console.print(f"\n[bold]💭 Overall Feedback:[/bold]")
+        console.print(Panel(
+            overall_feedback,
+            border_style="cyan",
+            padding=(1, 2)
+        ))
+        
+        # Show line-specific comments
+        if review_comments:
+            console.print(f"\n[bold]📝 Detailed Comments ({len(review_comments)}):[/bold]")
+            for i, comment in enumerate(review_comments[:5], 1):  # Show first 5
+                severity_color = {"error": "red", "warning": "yellow", "suggestion": "blue"}.get(
+                    comment.get("severity", "suggestion"), "white"
+                )
+                console.print(f"\n[{severity_color}]{i}. {comment.get('filename')}:{comment.get('line_number')}[/{severity_color}]")
+                console.print(f"   {comment.get('message', 'No message')}")
+                if comment.get("suggestion"):
+                    console.print(f"   💡 {comment['suggestion']}")
+            
+            if len(review_comments) > 5:
+                console.print(f"\n[dim]... and {len(review_comments) - 5} more comments[/dim]")
+        
+        # Show publishing status
+        if not params.get("dry_run"):
+            review_id = context.get("review_id")
+            if review_id:
+                console.print(f"\n[green]✅ Review published to GitHub (ID: {review_id})[/green]")
+                console.print(f"View at: https://github.com/{repo_owner}/{repo_name}/pull/{pr_number}")
+            else:
+                console.print("\n[yellow]⚠️ Review analysis completed but publishing failed[/yellow]")
+        else:
+            console.print(f"\n[blue]ℹ️ Dry run completed. Use 'regoose review-pr {pr_number}' to publish review[/blue]")
+        
+    except Exception as e:
+        console.print(f"[red]Error: {str(e)}[/red]")
+        if settings.debug:
+            import traceback
+            console.print("[dim]" + traceback.format_exc() + "[/dim]")
+
+
 async def _interactive_mode():
     """Interactive mode implementation."""
     console.print(Panel(
@@ -304,6 +464,19 @@ def _setup_configuration():
             default="deepseek-chat"
         )
         env_content.append(f"DEEPSEEK_MODEL={deepseek_model}")
+    
+    # GitHub integration
+    github_setup = Confirm.ask("Configure GitHub integration for PR reviews?", default=False)
+    if github_setup:
+        github_token = Prompt.ask("Enter your GitHub Personal Access Token (optional)", password=True, default="")
+        if github_token:
+            env_content.append(f"GITHUB_TOKEN={github_token}")
+        
+        github_owner = Prompt.ask("Enter GitHub repository owner", default="DronPascal")
+        env_content.append(f"GITHUB_REPO_OWNER={github_owner}")
+        
+        github_name = Prompt.ask("Enter GitHub repository name", default="ai-advert-2025")
+        env_content.append(f"GITHUB_REPO_NAME={github_name}")
     
     # Container runtime
     runtime = Prompt.ask(

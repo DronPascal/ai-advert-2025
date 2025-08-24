@@ -11,6 +11,9 @@ from ..actions.analyze_code import AnalyzeCodeAction
 from ..actions.generate_tests import GenerateTestsAction  
 from ..actions.run_tests import RunTestsAction
 from ..actions.generate_report import GenerateReportAction
+from ..actions.github_read_pr import GitHubReadPRAction
+from ..actions.github_analyze_pr import GitHubAnalyzePRAction
+from ..actions.github_publish_review import GitHubPublishReviewAction
 
 
 class ExecutionPlan:
@@ -40,6 +43,9 @@ class ActionOrchestrator:
             "generate_tests": GenerateTestsAction(self.llm_provider, self.tools),
             "run_tests": RunTestsAction(self.llm_provider, self.tools),
             "generate_report": GenerateReportAction(self.llm_provider, self.tools),
+            "github_read_pr": GitHubReadPRAction(self.llm_provider, self.tools),
+            "github_analyze_pr": GitHubAnalyzePRAction(self.llm_provider, self.tools),
+            "github_publish_review": GitHubPublishReviewAction(self.llm_provider, self.tools),
         }
     
     async def execute_plan(self, plan: ExecutionPlan, initial_data: Dict[str, Any]) -> ActionContext:

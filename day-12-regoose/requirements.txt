@@ -8,6 +8,9 @@ rich>=13.7.0
 # MCP support
 mcp>=1.0.0
 
+# GitHub integration
+PyGithub>=2.7.0
+
 # Testing frameworks support
 pytest>=8.0.0
 pytest-html>=4.1.1
