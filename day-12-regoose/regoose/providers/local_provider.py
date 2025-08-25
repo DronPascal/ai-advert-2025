@@ -14,11 +14,19 @@ class LocalLLMProvider(LLMProvider):
         self,
         endpoint: str = "http://localhost:11434",
         model: str = "llama3.2",
-        max_tokens: int = 4096
+        max_tokens: int = 4096,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        frequency_penalty: Optional[float] = None
     ):
         self.endpoint = endpoint.rstrip("/")
         self.model = model
         self.max_tokens = max_tokens
+        self.temperature = temperature
+        self.top_p = top_p
+        self.presence_penalty = presence_penalty
+        self.frequency_penalty = frequency_penalty
         self.api_url = f"{self.endpoint}/api/chat"
     
     async def generate(
@@ -28,14 +36,25 @@ class LocalLLMProvider(LLMProvider):
     ) -> LLMResponse:
         """Generate response from local LLM."""
         try:
+            # Build Ollama options
+            options = {
+                "num_predict": kwargs.get('max_tokens', self.max_tokens),
+                "temperature": kwargs.get('temperature', self.temperature or 0.1),
+            }
+            
+            # Add Ollama-specific parameters if provided
+            if kwargs.get('top_p', self.top_p) is not None:
+                options["top_p"] = kwargs.get('top_p', self.top_p)
+            if kwargs.get('presence_penalty', self.presence_penalty) is not None:
+                options["presence_penalty"] = kwargs.get('presence_penalty', self.presence_penalty)
+            if kwargs.get('frequency_penalty', self.frequency_penalty) is not None:
+                options["frequency_penalty"] = kwargs.get('frequency_penalty', self.frequency_penalty)
+            
             payload = {
                 "model": self.model,
                 "messages": messages,
                 "stream": False,
-                "options": {
-                    "num_predict": kwargs.get('max_tokens', self.max_tokens),
-                    "temperature": kwargs.get('temperature', 0.1),
-                }
+                "options": options
             }
             
             async with aiohttp.ClientSession() as session:
