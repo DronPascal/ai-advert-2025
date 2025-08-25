@@ -1,0 +1,8 @@
+---
+description: Attach when working on source code to enforce tests/docs hygiene
+globs: src/**
+alwaysApply: false
+---
+- When modifying code, add/adjust tests covering the change.
+- If public behavior changes, update docs and link the diff in PR.
+- Provide exact local commands to run tests/lint/format.

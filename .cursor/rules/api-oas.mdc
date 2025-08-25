@@ -1,0 +1,9 @@
+---
+description: Apply when editing OpenAPI to keep schema-first & non-breaking changes
+globs: ["api/openapi.yaml"]
+alwaysApply: false
+---
+
+- Edit schema first; generate stubs/clients from it.
+- Provide examples for 2xx/4xx/5xx; document types/nullability.
+- Avoid breaking changes; if unavoidable, mark MAJOR bump and write migration notes.
