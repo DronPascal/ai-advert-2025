@@ -32,6 +32,19 @@ app = typer.Typer(
 console = Console()
 
 
+def extract_llm_params(params: dict) -> dict:
+    """Extract LLM parameters from CLI params."""
+    llm_params = {
+        "temperature": params.get("temperature"),
+        "max_tokens": params.get("max_tokens"),
+        "top_p": params.get("top_p"),
+        "presence_penalty": params.get("presence_penalty"),
+        "frequency_penalty": params.get("frequency_penalty")
+    }
+    # Filter out None values
+    return {k: v for k, v in llm_params.items() if v is not None}
+
+
 def create_tools(settings, working_dir: str = ".", include_github: bool = False):
     """Create tools for orchestrator."""
     tools = {
@@ -64,6 +77,12 @@ def generate(
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output file for report"),
     provider: Optional[str] = typer.Option(None, "--provider", "-p", help="LLM provider (openai, deepseek, local, auto)"),
     max_iterations: int = typer.Option(3, "--max-iterations", help="Maximum improvement iterations"),
+    # LLM Parameters
+    temperature: Optional[float] = typer.Option(None, "--temperature", help="Sampling temperature (0.0-2.0)"),
+    max_tokens: Optional[int] = typer.Option(None, "--max-tokens", help="Maximum tokens in response"),
+    top_p: Optional[float] = typer.Option(None, "--top-p", help="Nucleus sampling parameter (0.0-1.0)"),
+    presence_penalty: Optional[float] = typer.Option(None, "--presence-penalty", help="Presence penalty (-2.0 to 2.0)"),
+    frequency_penalty: Optional[float] = typer.Option(None, "--frequency-penalty", help="Frequency penalty (-2.0 to 2.0)"),
 ):
     """Generate tests using test generation scenario."""
     asyncio.run(_run_test_generation_scenario({
@@ -73,7 +92,13 @@ def generate(
         "framework": framework,
         "output": output,
         "provider": provider,
-        "max_iterations": max_iterations
+        "max_iterations": max_iterations,
+        # LLM Parameters
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "top_p": top_p,
+        "presence_penalty": presence_penalty,
+        "frequency_penalty": frequency_penalty
     }))
 
 
@@ -84,6 +109,12 @@ def review_pr(
     dry_run: bool = typer.Option(False, "--dry-run", help="Analyze only, don't publish review"),
     repo_owner: Optional[str] = typer.Option(None, "--repo-owner", help="Repository owner (overrides config)"),
     repo_name: Optional[str] = typer.Option(None, "--repo-name", help="Repository name (overrides config)"),
+    # LLM Parameters
+    temperature: Optional[float] = typer.Option(None, "--temperature", help="Sampling temperature (0.0-2.0)"),
+    max_tokens: Optional[int] = typer.Option(None, "--max-tokens", help="Maximum tokens in response"),
+    top_p: Optional[float] = typer.Option(None, "--top-p", help="Nucleus sampling parameter (0.0-1.0)"),
+    presence_penalty: Optional[float] = typer.Option(None, "--presence-penalty", help="Presence penalty (-2.0 to 2.0)"),
+    frequency_penalty: Optional[float] = typer.Option(None, "--frequency-penalty", help="Frequency penalty (-2.0 to 2.0)"),
 ):
     """Review a GitHub Pull Request using AI analysis."""
     asyncio.run(_run_pr_review_scenario({
@@ -91,7 +122,13 @@ def review_pr(
         "provider": provider,
         "dry_run": dry_run,
         "repo_owner": repo_owner,
-        "repo_name": repo_name
+        "repo_name": repo_name,
+        # LLM Parameters
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "top_p": top_p,
+        "presence_penalty": presence_penalty,
+        "frequency_penalty": frequency_penalty
     }))
 
 
@@ -103,6 +140,12 @@ def review_pr_mcp(
     debug: bool = typer.Option(False, "--debug", help="Enable verbose debug output"),
     repo_owner: Optional[str] = typer.Option(None, "--repo-owner", help="Repository owner (overrides config)"),
     repo_name: Optional[str] = typer.Option(None, "--repo-name", help="Repository name (overrides config)"),
+    # LLM Parameters
+    temperature: Optional[float] = typer.Option(None, "--temperature", help="Sampling temperature (0.0-2.0)"),
+    max_tokens: Optional[int] = typer.Option(None, "--max-tokens", help="Maximum tokens in response"),
+    top_p: Optional[float] = typer.Option(None, "--top-p", help="Nucleus sampling parameter (0.0-1.0)"),
+    presence_penalty: Optional[float] = typer.Option(None, "--presence-penalty", help="Presence penalty (-2.0 to 2.0)"),
+    frequency_penalty: Optional[float] = typer.Option(None, "--frequency-penalty", help="Frequency penalty (-2.0 to 2.0)"),
 ):
     """Review a GitHub Pull Request using MCP GitHub tools integration."""
     asyncio.run(_run_mcp_pr_review_scenario({
@@ -111,7 +154,13 @@ def review_pr_mcp(
         "dry_run": dry_run,
         "debug": debug,
         "repo_owner": repo_owner,
-        "repo_name": repo_name
+        "repo_name": repo_name,
+        # LLM Parameters
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "top_p": top_p,
+        "presence_penalty": presence_penalty,
+        "frequency_penalty": frequency_penalty
     }))
 
 
