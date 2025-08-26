@@ -20,6 +20,7 @@ from ..actions.analyze_codebase import AnalyzeCodebaseAction
 from ..actions.plan_improvements import PlanImprovementsAction
 from ..actions.implement_changes import ImplementChangesAction
 from ..actions.validate_changes import ValidateChangesAction
+from ..actions.generate_improvement_report import GenerateImprovementReportAction
 
 
 class ExecutionPlan:
@@ -59,7 +60,8 @@ class ActionOrchestrator:
             "analyze_codebase": AnalyzeCodebaseAction(self.llm_provider, self.tools),
             "plan_improvements": PlanImprovementsAction(self.llm_provider, self.tools),
             "implement_changes": ImplementChangesAction(self.llm_provider, self.tools),
-            "validate_changes": ValidateChangesAction(self.llm_provider, self.tools)
+            "validate_changes": ValidateChangesAction(self.llm_provider, self.tools),
+            "generate_improvement_report": GenerateImprovementReportAction(self.llm_provider, self.tools)
         }
     
     @timed_operation("execute_plan", "orchestrator")

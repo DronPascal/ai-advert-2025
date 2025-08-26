@@ -33,7 +33,7 @@ class CodeImprovementScenario(BaseScenario):
                     "plan_improvements",     # Create detailed improvement plan
                     "implement_changes",     # Execute the planned changes
                     "validate_changes",      # Validate syntax and basic checks
-                    "generate_report"        # Generate final comprehensive report
+                    "generate_improvement_report"  # Generate final comprehensive report
                 ])
                 
                 # Execute the plan

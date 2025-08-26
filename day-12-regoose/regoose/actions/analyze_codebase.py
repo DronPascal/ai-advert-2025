@@ -37,12 +37,14 @@ class AnalyzeCodebaseAction(BaseAction):
             logger.info(f"Analyzing codebase in: {target_directory}")
             
             # Get directory analysis
-            analysis_result = await filesystem_tool.execute("analyze_directory", path=".")
+            # Limit analysis to avoid token overflow
+            analysis_result = await filesystem_tool.execute("analyze_directory", path=".", max_files=15)
             if not analysis_result.success:
                 return ActionResult.error_result(f"Directory analysis failed: {analysis_result.error}")
             
             # Get file tree structure
-            tree_result = await filesystem_tool.execute("get_file_tree", path=".")
+            # Limit tree depth to save tokens
+            tree_result = await filesystem_tool.execute("get_file_tree", path=".", max_depth=2)
             if not tree_result.success:
                 logger.warning(f"File tree generation failed: {tree_result.error}")
                 tree_output = "File tree not available"
@@ -97,7 +99,7 @@ CODEBASE OVERVIEW:
 - Summary: {analysis_data.get('summary', 'No summary available')}
 
 FILE STRUCTURE:
-{tree_output}
+{tree_output[:1000] + '...' if len(tree_output) > 1000 else tree_output}
 
 ANALYSIS REQUIREMENTS:
 1. Focus on the specified goal: "{goal}"

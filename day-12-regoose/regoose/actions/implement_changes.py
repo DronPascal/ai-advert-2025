@@ -10,6 +10,10 @@ logger = get_logger("implement_changes")
 class ImplementChangesAction(BaseAction):
     """Action to implement planned code improvements."""
     
+    def __init__(self, llm_provider, tools):
+        super().__init__(llm_provider, tools)
+        self.logger = get_logger("implement_changes")
+    
     def get_required_fields(self) -> List[str]:
         """Get required context fields."""
         return ["implementation_plan"]
@@ -29,7 +33,7 @@ class ImplementChangesAction(BaseAction):
             implementation_plan = context.get("implementation_plan", [])
             goal = context.get("goal", "Code improvement")
             
-            logger.info(f"Implementing {len(implementation_plan)} planned changes")
+            self.logger.info(f"Implementing {len(implementation_plan)} planned changes")
             
             # Get filesystem tool
             filesystem_tool = self.tools.get("secure_filesystem")
@@ -46,15 +50,15 @@ class ImplementChangesAction(BaseAction):
                 
                 if step_result["success"]:
                     successful_changes += 1
-                    logger.info(f"✅ Step {step['step_number']}: {step['title']}")
+                    self.logger.info(f"✅ Step {step['step_number']}: {step['title']}")
                 else:
                     failed_changes += 1
-                    logger.error(f"❌ Step {step['step_number']}: {step_result['error']}")
+                    self.logger.error(f"❌ Step {step['step_number']}: {step_result['error']}")
             
             # Generate summary
             summary = self._generate_implementation_summary(results, successful_changes, failed_changes)
             
-            logger.info(f"Implementation completed: {successful_changes} successful, {failed_changes} failed")
+            self.logger.info(f"Implementation completed: {successful_changes} successful, {failed_changes} failed")
             
             return ActionResult.success_result(
                 data={
@@ -70,7 +74,7 @@ class ImplementChangesAction(BaseAction):
             )
             
         except Exception as e:
-            logger.error(f"Implementation failed: {e}", error=str(e))
+            self.logger.error(f"Implementation failed: {e}", error=str(e))
             return ActionResult.error_result(f"Implementation failed: {str(e)}")
     
     async def _implement_step(self, step: Dict, filesystem_tool) -> Dict:
@@ -109,16 +113,29 @@ class ImplementChangesAction(BaseAction):
                 else:
                     step_result["error"] = "No code provided for file creation"
             
-            elif change_type == "modification" or change_type == "edit":
-                # Modify existing file
+            elif change_type == "modification" or change_type == "edit" or change_type == "modify_file":
+                # Modify existing file with smart line-by-line changes
                 if code:
+                    # Read existing file first
+                    read_result = await filesystem_tool.execute("read_file", path=file_path)
+                    if not read_result.success:
+                        step_result["error"] = f"Failed to read existing file: {read_result.error}"
+                        return step_result
+                    
+                    current_content = read_result.content
+                    
                     # Create backup first
                     backup_result = await filesystem_tool.execute("backup_file", path=file_path)
                     if backup_result.success:
                         step_result["backup_created"] = backup_result.metadata.get("backup_path")
                     
-                    # Write new content
-                    result = await filesystem_tool.execute("write_file", path=file_path, content=code)
+                    # Apply smart diff-based changes instead of full replacement
+                    modified_content = await self._apply_smart_changes(
+                        current_content, code, description
+                    )
+                    
+                    # Write modified content
+                    result = await filesystem_tool.execute("write_file", path=file_path, content=modified_content)
                     if result.success:
                         step_result["success"] = True
                         step_result["changes_made"].append(f"Modified file: {file_path}")
@@ -141,7 +158,13 @@ class ImplementChangesAction(BaseAction):
                     step_result["error"] = f"Failed to backup file for deletion: {backup_result.error}"
             
             else:
-                step_result["error"] = f"Unknown change type: {change_type}"
+                # Handle unknown or non-file change types by skipping them with a warning
+                if change_type in ["review", "analysis", "documentation", "note", "addition/modification"]:
+                    step_result["status"] = "skipped"
+                    step_result["message"] = f"Skipping non-file change type: {change_type}"
+                    self.logger.info(f"⚠️ Step {step_idx + 1}: Skipped non-file change: {change_type}")
+                else:
+                    step_result["error"] = f"Unknown change type: {change_type}"
             
         except Exception as e:
             step_result["error"] = f"Step implementation error: {str(e)}"
@@ -275,3 +298,88 @@ Changes Made:
             report += "---\n\n"
         
         return report
+    
+    async def _apply_smart_changes(self, current_content: str, new_code: str, description: str) -> str:
+        """Apply smart changes to existing content instead of full replacement."""
+        
+        # If the new code is significantly shorter than current content,
+        # it's likely a targeted change, not a full replacement
+        current_lines = current_content.split('\n')
+        new_lines = new_code.split('\n')
+        
+        # If new code is less than 50% of original, treat as targeted change
+        if len(new_lines) < len(current_lines) * 0.5:
+            # Look for best match in the current content to replace
+            return self._find_and_replace_section(current_content, new_code, description)
+        
+        # If the new code is similar length, check for line-by-line changes
+        if abs(len(new_lines) - len(current_lines)) <= 5:
+            return self._merge_line_changes(current_content, new_code)
+        
+        # Default to full replacement if we can't determine targeted changes
+        return new_code
+    
+    def _find_and_replace_section(self, current_content: str, new_code: str, description: str) -> str:
+        """Find the best section to replace based on description and new code."""
+        
+        current_lines = current_content.split('\n')
+        new_lines = new_code.split('\n')
+        
+        # Look for comments or function names mentioned in description
+        keywords = description.lower().split()
+        
+        best_match_start = 0
+        best_match_score = 0
+        
+        # Search for the best location to insert the new code
+        for i in range(len(current_lines) - len(new_lines) + 1):
+            score = 0
+            section = '\n'.join(current_lines[i:i+len(new_lines)])
+            
+            # Score based on similar words
+            for keyword in keywords:
+                if keyword in section.lower():
+                    score += 1
+            
+            # Score based on similar structure (functions, classes, etc.)
+            if any(line.strip().startswith(('def ', 'class ', '#')) for line in new_lines):
+                section_lines = current_lines[i:i+len(new_lines)]
+                if any(line.strip().startswith(('def ', 'class ', '#')) for line in section_lines):
+                    score += 2
+            
+            if score > best_match_score:
+                best_match_score = score
+                best_match_start = i
+        
+        # Replace the best matching section
+        if best_match_score > 0:
+            result_lines = current_lines[:best_match_start] + new_lines + current_lines[best_match_start + len(new_lines):]
+            return '\n'.join(result_lines)
+        
+        # If no good match found, append at the end
+        return current_content + '\n\n' + new_code
+    
+    def _merge_line_changes(self, current_content: str, new_code: str) -> str:
+        """Merge line-by-line changes when content is similar length."""
+        
+        current_lines = current_content.split('\n')
+        new_lines = new_code.split('\n')
+        
+        # Simple line-by-line merge - replace changed lines
+        result_lines = []
+        
+        for i, new_line in enumerate(new_lines):
+            if i < len(current_lines):
+                # If lines are substantially different, use new line
+                if len(new_line.strip()) > 0 and new_line.strip() != current_lines[i].strip():
+                    result_lines.append(new_line)
+                else:
+                    result_lines.append(current_lines[i])
+            else:
+                result_lines.append(new_line)
+        
+        # Add any remaining original lines
+        if len(current_lines) > len(new_lines):
+            result_lines.extend(current_lines[len(new_lines):])
+        
+        return '\n'.join(result_lines)

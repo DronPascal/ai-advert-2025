@@ -212,20 +212,35 @@ Focus on practical, implementable changes that directly address the goal."""
             # Parse step content
             if current_step and stripped_line:
                 if stripped_line.startswith('- **File:**'):
-                    current_step["file"] = stripped_line.replace('- **File:**', '').strip()
+                    file_path = stripped_line.replace('- **File:**', '').strip()
+                    # Clean up any markdown artifacts (backticks, etc.)
+                    file_path = file_path.strip('`').strip()
+                    # Normalize path - remove directory prefixes to make relative
+                    if '/' in file_path:
+                        file_path = file_path.split('/')[-1]  # Take only filename
+                    current_step["file"] = file_path
                 elif stripped_line.startswith('- **Change Type:**'):
                     change_type = stripped_line.replace('- **Change Type:**', '').strip().lower()
+                    # Clean up markdown artifacts
+                    change_type = change_type.strip('`').strip()
                     current_step["change_type"] = change_type
                 elif stripped_line.startswith('- **Description:**'):
-                    current_step["description"] = stripped_line.replace('- **Description:**', '').strip()
+                    description = stripped_line.replace('- **Description:**', '').strip()
+                    # Clean up markdown artifacts
+                    description = description.strip('`').strip()
+                    current_step["description"] = description
                 elif stripped_line.startswith('- **Validation:**'):
-                    current_step["validation"] = stripped_line.replace('- **Validation:**', '').strip()
+                    validation = stripped_line.replace('- **Validation:**', '').strip()
+                    # Clean up markdown artifacts
+                    validation = validation.strip('`').strip()
+                    current_step["validation"] = validation
                 elif not stripped_line.startswith('-') and not stripped_line.startswith('#'):
                     # Continue description
+                    cleaned_line = stripped_line.strip('`').strip()
                     if current_step["description"]:
-                        current_step["description"] += " " + stripped_line
+                        current_step["description"] += " " + cleaned_line
                     else:
-                        current_step["description"] = stripped_line
+                        current_step["description"] = cleaned_line
         
         # Add the last step
         if current_step:
