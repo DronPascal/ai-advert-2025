@@ -3,6 +3,7 @@
 import openai
 from typing import List, Dict, Any, Optional
 from .base import LLMProvider, LLMResponse
+from ..core.logging import get_logger, timed_operation, metrics
 
 
 class OpenAIProvider(LLMProvider):
@@ -22,10 +23,12 @@ class OpenAIProvider(LLMProvider):
         self.model = model
         self.max_tokens = max_tokens
         self.temperature = temperature
-        self.top_p = top_p
+        self.top_p = top_p  
         self.presence_penalty = presence_penalty
         self.frequency_penalty = frequency_penalty
+        self.logger = get_logger("openai_provider")
     
+    @timed_operation("openai_generate", "openai_provider")
     async def generate(
         self,
         messages: List[Dict[str, str]],
@@ -52,6 +55,11 @@ class OpenAIProvider(LLMProvider):
                 if k not in params and v is not None:
                     params[k] = v
             
+            self.logger.debug("Sending request to OpenAI",
+                             metadata={"model": params["model"], "message_count": len(messages),
+                                     "max_tokens": params.get("max_tokens")})
+            
+            metrics.record_counter("openai_api_request", {"model": params["model"]})
             response = self.client.chat.completions.create(**params)
             
             choice = response.choices[0]
@@ -75,9 +83,19 @@ class OpenAIProvider(LLMProvider):
             # Add tool calls to response if they exist
             if tool_calls:
                 response_obj.tool_calls = tool_calls
+            
+            # Log successful response
+            metrics.record_counter("openai_api_success", {"model": response.model})
+            metrics.record_gauge("openai_tokens_used", response.usage.total_tokens if response.usage else 0)
+            
+            self.logger.debug("Received response from OpenAI",
+                             metadata={"model": response.model, "tokens": response.usage.total_tokens if response.usage else 0,
+                                     "finish_reason": choice.finish_reason})
                 
             return response_obj
         except Exception as e:
+            metrics.record_counter("openai_api_error", {"error_type": type(e).__name__})
+            self.logger.error(f"OpenAI API error: {str(e)}", error=str(e))
             raise RuntimeError(f"OpenAI API error: {str(e)}")
     
     def get_model_name(self) -> str:

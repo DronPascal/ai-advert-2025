@@ -57,6 +57,12 @@ isort = ">=5.13.2"            # Import sorting
 python-on-whales = ">=0.71.0" # Docker/Podman wrapper
 ```
 
+#### Observability & Monitoring (NEW)
+```toml
+httpx = ">=0.25.0"            # HTTP client for health checks
+psutil = ">=5.9.0"            # System resource monitoring
+```
+
 #### Development Tools
 ```toml
 python-dotenv = ">=1.0.0"     # Environment management
@@ -67,11 +73,11 @@ python-dotenv = ">=1.0.0"     # Environment management
 ### Modular Design
 ```
 regoose/
-├── core/          # Agent logic and session management
+├── core/          # Agent logic, session management, logging, and health checks (ENHANCED)
 ├── providers/     # LLM provider abstractions
 ├── tools/         # MCP tool implementations
 ├── framework/     # Multi-agent system components
-└── cli.py         # Command-line interface
+└── cli.py         # Command-line interface with health monitoring
 ```
 
 ### Key Design Principles

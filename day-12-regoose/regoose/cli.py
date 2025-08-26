@@ -13,6 +13,8 @@ from rich.prompt import Prompt, Confirm
 from rich.markdown import Markdown
 
 from .core.config import get_settings
+from .core.logging import setup_logging, LogLevel, get_logger, CorrelationContext, operation_context
+from .core.health import run_health_checks, run_single_health_check
 from .providers.factory import LLMProviderFactory
 from .tools.filesystem_tool import FilesystemTool
 from .tools.shell_tool import ShellTool
@@ -30,6 +32,12 @@ app = typer.Typer(
     add_completion=False
 )
 console = Console()
+
+# Initialize logging on import
+settings = get_settings()
+log_level = LogLevel.DEBUG if settings.debug else LogLevel.INFO
+setup_logging(log_level)
+cli_logger = get_logger("cli")
 
 
 def extract_llm_params(params: dict) -> dict:
@@ -85,7 +93,10 @@ def generate(
     frequency_penalty: Optional[float] = typer.Option(None, "--frequency-penalty", help="Frequency penalty (-2.0 to 2.0)"),
 ):
     """Generate tests using test generation scenario."""
-    asyncio.run(_run_test_generation_scenario({
+    with operation_context("generate_tests", "cli") as correlation_id:
+        cli_logger.info("Starting test generation command",
+                       metadata={"provider": provider, "language": language})
+        asyncio.run(_run_test_generation_scenario({
         "code": code,
         "file": file,
         "language": language,
@@ -162,6 +173,14 @@ def review_pr_mcp(
         "presence_penalty": presence_penalty,
         "frequency_penalty": frequency_penalty
     }))
+
+
+@app.command()
+def health(
+    check: Optional[str] = typer.Option(None, "--check", "-c", help="Run specific health check")
+):
+    """Check system health and component status."""
+    asyncio.run(_run_health_check(check))
 
 
 @app.command()
@@ -715,6 +734,72 @@ def _setup_configuration():
             console.print("[green]✅ Configuration is valid![/green]")
         except Exception as e:
             console.print(f"[red]❌ Configuration error: {e}[/red]")
+
+
+async def _run_health_check(check_name: Optional[str] = None):
+    """Run health checks and display results."""
+    from rich.table import Table
+    from rich.text import Text
+    
+    cli_logger.info("Running health checks", metadata={"specific_check": check_name})
+    
+    try:
+        if check_name:
+            results = await run_single_health_check(check_name)
+        else:
+            results = await run_health_checks()
+        
+        # Display results in a nice table
+        table = Table(title="System Health Check")
+        table.add_column("Component", style="cyan", no_wrap=True)
+        table.add_column("Status", style="bold")
+        table.add_column("Message", style="dim")
+        table.add_column("Details", style="dim")
+        
+        for check_name, result in results.get("checks", {}).items():
+            status = result["status"]
+            
+            # Color status based on result
+            if status == "healthy":
+                status_text = Text("✅ Healthy", style="green")
+            elif status == "warning":
+                status_text = Text("⚠️  Warning", style="yellow")
+            elif status == "disabled":
+                status_text = Text("⭕ Disabled", style="blue")
+            elif status == "unhealthy":
+                status_text = Text("❌ Unhealthy", style="red")
+            else:
+                status_text = Text("🔍 Unknown", style="dim")
+            
+            details = ""
+            if "metadata" in result:
+                metadata = result["metadata"]
+                if isinstance(metadata, dict):
+                    details = ", ".join([f"{k}: {v}" for k, v in metadata.items() if v is not None])
+            
+            table.add_row(
+                check_name.replace("_", " ").title(),
+                status_text,
+                result.get("message", ""),
+                details
+            )
+        
+        console.print(table)
+        
+        # Overall status summary
+        overall = results.get("overall_status", "unknown")
+        if overall == "healthy":
+            console.print("\n[bold green]🎉 All systems are healthy![/bold green]")
+        elif overall == "warning":
+            console.print("\n[bold yellow]⚠️  Some systems have warnings[/bold yellow]")
+        elif overall == "unhealthy":
+            console.print("\n[bold red]❌ Some systems are unhealthy[/bold red]")
+        else:
+            console.print(f"\n[bold dim]🔍 Overall status: {overall}[/bold dim]")
+            
+    except Exception as e:
+        cli_logger.error(f"Health check failed: {str(e)}")
+        console.print(f"[red]❌ Health check failed: {e}[/red]")
 
 
 if __name__ == "__main__":
