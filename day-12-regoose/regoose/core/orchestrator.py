@@ -16,6 +16,10 @@ from ..actions.github_read_pr import GitHubReadPRAction
 from ..actions.github_analyze_pr import GitHubAnalyzePRAction
 from ..actions.github_publish_review import GitHubPublishReviewAction
 from ..actions.mcp_pr_review import MCPPRReviewAction
+from ..actions.analyze_codebase import AnalyzeCodebaseAction
+from ..actions.plan_improvements import PlanImprovementsAction
+from ..actions.implement_changes import ImplementChangesAction
+from ..actions.validate_changes import ValidateChangesAction
 
 
 class ExecutionPlan:
@@ -38,6 +42,7 @@ class ActionOrchestrator:
         self.tools = tools
         self.actions = self._register_actions()
         self.logger = get_logger("orchestrator")
+        self.context_class = ActionContext
     
     def _register_actions(self) -> Dict[str, BaseAction]:
         """Register all available actions."""
@@ -50,6 +55,11 @@ class ActionOrchestrator:
             "github_analyze_pr": GitHubAnalyzePRAction(self.llm_provider, self.tools),
             "github_publish_review": GitHubPublishReviewAction(self.llm_provider, self.tools),
             "mcp_pr_review": MCPPRReviewAction(self.llm_provider, self.tools),
+            # Code improvement actions
+            "analyze_codebase": AnalyzeCodebaseAction(self.llm_provider, self.tools),
+            "plan_improvements": PlanImprovementsAction(self.llm_provider, self.tools),
+            "implement_changes": ImplementChangesAction(self.llm_provider, self.tools),
+            "validate_changes": ValidateChangesAction(self.llm_provider, self.tools)
         }
     
     @timed_operation("execute_plan", "orchestrator")
