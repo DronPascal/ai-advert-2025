@@ -1,0 +1,33 @@
+class Calculator:
+    """A simple calculator class to perform basic arithmetic operations."""
+
+    def __init__(self):
+        pass
+    
+    def calculate(self, operation, a, b):
+        """Calculates the result of the specified operation on two numbers.
+
+        Args:
+            operation (str): The operation to perform ('add', 'multiply', 'divide').
+            a (float): The first number.
+            b (float): The second number.
+
+        Returns:
+            float: The result of the operation.
+
+        Raises:
+            ValueError: If the operation is unsupported.
+        """
+        try:
+            if operation == "add":
+                return add_numbers(a, b)
+            elif operation == "multiply":
+                return multiply(a, b)
+            elif operation == "divide":
+                return divide(a, b)
+            else:
+                logging.error("Unsupported operation: %s", operation)
+                raise ValueError(f"Unsupported operation: {operation}")
+        except Exception as e:
+            logging.error("Error in calculate: %s", e)
+            raise
