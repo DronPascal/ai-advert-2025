@@ -116,7 +116,7 @@ class PlanImprovementsAction(BaseAction):
         for i, rec in enumerate(recommendations, 1):
             recommendations_text += f"{i}. {rec.get('title', 'Unknown')}: {rec.get('description', '')}\n"
         
-        return f"""You are an expert software engineer creating a detailed implementation plan.
+        return f"""You are an expert software engineer. Your task is to make MINIMAL changes to achieve the goal.
 
 GOAL: {goal}
 
@@ -128,44 +128,33 @@ RECOMMENDATIONS TO IMPLEMENT:
 
 {files_summary}
 
-CREATE A DETAILED IMPLEMENTATION PLAN:
-
-1. **Prioritize** the most important changes first
-2. **Be specific** about file modifications needed
-3. **Include** ONLY the specific lines that need to change
-4. **Consider** dependencies between changes
-5. **Provide** step-by-step instructions
-
-IMPORTANT: For MODIFICATIONS, you MUST specify:
-- The EXACT text to find (OLD line)
-- The EXACT text to replace it with (NEW line)
-- The context where this change should happen
+IMPORTANT INSTRUCTIONS:
+1. **Do ONLY what is asked** - no extra features, no refactoring, no documentation
+2. **Maximum 2-3 steps** for simple tasks
+3. **Be precise** - find exact text and replace it exactly
+4. **No file creation** unless explicitly requested
+5. **No structural changes** unless necessary
 
 RESPONSE FORMAT:
 ## Implementation Plan
 
-### Step 1: [Title]
-- **File:** path/to/file.ext
-- **Change Type:** [addition/modification/deletion]
-- **Description:** What to change and why
+### Step 1: [Main Change]
+- **File:** filename.ext
+- **Change Type:** modification
+- **Description:** Exact change needed
 - **Code:** 
 ```language
-// For MODIFICATIONS, use this format:
-// OLD: exact text to find and replace
-// NEW: exact text to replace with
-
-// For additions: show where to add and what to add
-// For deletions: show what to remove
+OLD: exact text to find
+NEW: exact text to replace with
 ```
 
-### Step 2: [Title]
-[Continue with more steps...]
+### Step 2: [Additional Change - ONLY if absolutely necessary]
+[Same format]
 
 ## Validation Steps
-[How to verify changes work]
+[How to verify the main goal is achieved]
 
-Focus on practical, implementable changes that directly address the goal.
-Remember: For modifications, specify OLD and NEW text exactly."""
+Remember: SIMPLE and PRECISE changes only. Do not over-engineer."""
     
     def _parse_planning_response(self, response: str, recommendations: List[Dict]) -> List[Dict]:
         """Parse planning response into structured implementation steps."""
