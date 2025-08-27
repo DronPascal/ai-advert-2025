@@ -4,4 +4,8 @@ def calculate_sum(a: float, b: float) -> float:
         raise ValueError("Input 'a' must be a number.")
     if not isinstance(b, (int, float)):
         raise ValueError("Input 'b' must be a number.")
-return a + b  # Returns sum of two numbers
+    return a + b  # Returns sum of two numbers
+
+# This function greets the user with a personalized message.
+def greet(name):
+    return f"Hi, {name}!"

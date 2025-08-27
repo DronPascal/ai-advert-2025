@@ -128,12 +128,24 @@ RECOMMENDATIONS TO IMPLEMENT:
 
 {files_summary}
 
-IMPORTANT INSTRUCTIONS:
-1. **Do ONLY what is asked** - no extra features, no refactoring, no documentation
-2. **Maximum 2-3 steps** for simple tasks
-3. **Be precise** - find exact text and replace it exactly
+CRITICAL INSTRUCTIONS:
+1. **Do EXACTLY what is asked** - no extra features, no refactoring, no documentation
+2. **Maximum 1-2 steps** for simple text replacements
+3. **Be PRECISE** - find exact text and replace it exactly
 4. **No file creation** unless explicitly requested
 5. **No structural changes** unless necessary
+
+FOR TEXT REPLACEMENTS:
+- Find the EXACT line containing the text to change
+- Replace ONLY that specific text
+- Keep everything else unchanged
+- Use OLD: and NEW: format for exact replacements
+
+EXAMPLE FOR "Change 'Hello' to 'Hi'":
+```python
+OLD: return f"Hello, {{name}}!"
+NEW: return f"Hi, {{name}}!"
+```
 
 RESPONSE FORMAT:
 ## Implementation Plan
