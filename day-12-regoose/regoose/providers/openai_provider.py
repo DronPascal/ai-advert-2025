@@ -86,7 +86,25 @@ class OpenAIProvider(LLMProvider):
             
             # Log successful response
             metrics.record_counter("openai_api_success", {"model": response.model})
-            metrics.record_gauge("openai_tokens_used", response.usage.total_tokens if response.usage else 0)
+
+            # Record detailed token usage
+            if response.usage:
+                total_tokens = response.usage.total_tokens
+                input_tokens = response.usage.prompt_tokens
+                output_tokens = response.usage.completion_tokens
+
+                # Record total tokens for backward compatibility
+                metrics.record_gauge("openai_tokens_used", total_tokens,
+                                    {"model": response.model, "operation": "generate",
+                                     "input_tokens": input_tokens, "output_tokens": output_tokens})
+
+                # Record separate input and output token metrics
+                metrics.record_gauge("openai_input_tokens", input_tokens, {"model": response.model})
+                metrics.record_gauge("openai_output_tokens", output_tokens, {"model": response.model})
+            else:
+                # Fallback if usage info not available
+                metrics.record_gauge("openai_tokens_used", 0,
+                                    {"model": response.model, "operation": "generate"})
             
             self.logger.debug("Received response from OpenAI",
                              metadata={"model": response.model, "tokens": response.usage.total_tokens if response.usage else 0,

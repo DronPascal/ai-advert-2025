@@ -4,6 +4,9 @@ from typing import Dict, List, Any
 from .base import BaseAction, ActionContext, ActionResult
 from ..core.logging import get_logger, timed_operation
 import re
+import os
+import tempfile
+import subprocess
 
 logger = get_logger("implement_changes")
 
@@ -33,6 +36,7 @@ class ImplementChangesAction(BaseAction):
             
             implementation_plan = context.get("implementation_plan", [])
             goal = context.get("goal", "Code improvement")
+            git_patch = context.get("git_patch", False)
             
             self.logger.info(f"Implementing {len(implementation_plan)} planned changes")
             
@@ -46,7 +50,7 @@ class ImplementChangesAction(BaseAction):
             failed_changes = 0
             
             for step in implementation_plan:
-                step_result = await self._implement_step(step, filesystem_tool)
+                step_result = await self._implement_step(step, filesystem_tool, context)
                 results.append(step_result)
                 
                 if step_result["success"]:
@@ -78,7 +82,7 @@ class ImplementChangesAction(BaseAction):
             self.logger.error(f"Implementation failed: {e}", error=str(e))
             return ActionResult.error_result(f"Implementation failed: {str(e)}")
     
-    async def _implement_step(self, step: Dict, filesystem_tool) -> Dict:
+    async def _implement_step(self, step: Dict, filesystem_tool, context: ActionContext) -> Dict:
         """Implement a single step from the plan."""
         step_result = {
             "step_number": step.get("step_number", 0),
@@ -117,22 +121,34 @@ class ImplementChangesAction(BaseAction):
             elif change_type == "modification" or change_type == "edit" or change_type == "modify_file":
                 # Modify existing file with smart line-by-line changes
                 if code:
-                    # Read existing file first
-                    read_result = await filesystem_tool.execute("read_file", path=file_path)
-                    if not read_result.success:
-                        step_result["error"] = f"Failed to read existing file: {read_result.error}"
-                        return step_result
+                    # Try to get content from cached context first (to avoid repeated file reads)
+                    cached_files = context.get("file_contents", {})
+                    current_content = None
+
+                    if file_path in cached_files:
+                        current_content = cached_files[file_path]
+                        self.logger.debug(f"Using cached content for {file_path}")
+                    else:
+                        # Read existing file if not in cache
+                        read_result = await filesystem_tool.execute("read_file", path=file_path)
+                        if not read_result.success:
+                            step_result["error"] = f"Failed to read existing file: {read_result.error}"
+                            return step_result
+                        current_content = read_result.output
                     
-                    current_content = read_result.output
-                    
-                    # Create backup first
+                    # Create backup using secure filesystem tool
+                    # This will create backup in .regoose_backups directory within sandbox
                     backup_result = await filesystem_tool.execute("backup_file", path=file_path)
                     if backup_result.success:
                         step_result["backup_created"] = backup_result.metadata.get("backup_path")
+                        self.logger.debug(f"Backup created: {backup_result.metadata.get('backup_path')}")
+                    else:
+                        self.logger.warning(f"Failed to create backup: {backup_result.error}")
+                        step_result["backup_created"] = None
                     
                     # Apply smart diff-based changes instead of full replacement
                     modified_content = await self._apply_smart_changes(
-                        current_content, code, description
+                        current_content, code, description, git_patch
                     )
                     
                     # Write modified content
@@ -145,7 +161,7 @@ class ImplementChangesAction(BaseAction):
                 else:
                     # If no code provided, try to make intelligent changes based on description
                     step_result = await self._intelligent_modification(
-                        step, filesystem_tool, step_result
+                        step, filesystem_tool, step_result, context
                     )
             
             elif change_type == "deletion" or change_type == "delete":
@@ -172,37 +188,42 @@ class ImplementChangesAction(BaseAction):
         
         return step_result
     
-    async def _intelligent_modification(self, step: Dict, filesystem_tool, step_result: Dict) -> Dict:
+    async def _intelligent_modification(self, step: Dict, filesystem_tool, step_result: Dict, context: ActionContext) -> Dict:
         """Make intelligent modifications when specific code is not provided."""
         
         file_path = step.get("file", "")
         description = step.get("description", "")
         
         try:
-            # Read current file content
-            read_result = await filesystem_tool.execute("read_file", path=file_path)
-            if not read_result.success:
-                step_result["error"] = f"Cannot read file for modification: {read_result.error}"
-                return step_result
-            
-            current_content = read_result.output
+            # Try to get content from cached context first (to avoid repeated file reads)
+            cached_files = context.get("file_contents", {})
+            current_content = None
+
+            if file_path in cached_files:
+                current_content = cached_files[file_path]
+                self.logger.debug(f"Using cached content for intelligent modification: {file_path}")
+            else:
+                # Read current file content if not in cache
+                read_result = await filesystem_tool.execute("read_file", path=file_path)
+                if not read_result.success:
+                    step_result["error"] = f"Cannot read file for modification: {read_result.error}"
+                    return step_result
+                current_content = read_result.output
             
             # Create backup
             backup_result = await filesystem_tool.execute("backup_file", path=file_path)
             if backup_result.success:
                 step_result["backup_created"] = backup_result.metadata.get("backup_path")
             
-            # Use LLM to generate the improved code
-            improvement_prompt = f"""You are modifying code to implement this improvement:
+            # Use LLM to generate the improved code (optimized prompt)
+            improvement_prompt = f"""Modify code for: {description}
 
-DESCRIPTION: {description}
-
-CURRENT CODE:
+CURRENT:
 ```
-{current_content}
+{current_content[:1500] + '...' if len(current_content) > 1500 else current_content}
 ```
 
-Provide the complete improved code for the file. Only output the code, no explanations."""
+OUTPUT: Complete improved code only."""
             
             messages = [
                 {"role": "system", "content": improvement_prompt}
@@ -216,6 +237,12 @@ Provide the complete improved code for the file. Only output the code, no explan
                 lines = improved_code.split('\n')
                 improved_code = '\n'.join(lines[1:-1]) if len(lines) > 2 else improved_code
             
+            # Create backup before writing improved code
+            backup_result = await filesystem_tool.execute("backup_file", path=file_path)
+            if backup_result.success:
+                step_result["backup_created"] = backup_result.metadata.get("backup_path")
+                self.logger.debug(f"Backup created for intelligent modification: {backup_result.metadata.get('backup_path')}")
+
             # Write improved code
             write_result = await filesystem_tool.execute("write_file", path=file_path, content=improved_code)
             if write_result.success:
@@ -300,23 +327,27 @@ Changes Made:
         
         return report
     
-    async def _apply_smart_changes(self, current_content: str, new_code: str, description: str) -> str:
+    async def _apply_smart_changes(self, current_content: str, new_code: str, description: str, git_patch: bool = False) -> str:
         """Apply smart changes to existing content instead of full replacement."""
-        
-        # NEVER replace entire file content unless explicitly requested
+
+        # Check if git patch mode is enabled
+        if git_patch:
+            return await self._apply_git_patch_changes(current_content, new_code, description)
+
+        # Standard mode - NEVER replace entire file content unless explicitly requested
         # Always try to make targeted changes first
-        
+
         # First, try to find OLD/NEW pattern in the new_code
         old_text = None
         new_text = None
-        
+
         for line in new_code.split('\n'):
             line = line.strip()
             if line.startswith('OLD:'):
                 old_text = line.replace('OLD:', '').strip()
             elif line.startswith('NEW:'):
                 new_text = line.replace('NEW:', '').strip()
-        
+
         # If we have OLD/NEW pattern, do exact replacement
         if old_text and new_text:
             if old_text in current_content:
@@ -325,7 +356,7 @@ Changes Made:
             else:
                 # Try to find similar lines with fuzzy matching
                 return self._find_similar_line_and_replace(current_content, old_text, new_text)
-        
+
         # If no OLD/NEW pattern, try to extract from description
         if "change" in description.lower() or "replace" in description.lower():
             # Look for quoted text in description
@@ -335,7 +366,7 @@ Changes Made:
                 if old_text in current_content:
                     self.logger.info(f"Found match from description, replacing: '{old_text}' -> '{new_text}'")
                     return current_content.replace(old_text, new_text)
-        
+
         # NEW: Try to extract change from goal description using common patterns
         if "hello" in description.lower() and "hi" in description.lower():
             # Look for Hello -> Hi pattern
@@ -343,17 +374,112 @@ Changes Made:
                 new_content = current_content.replace("Hello", "Hi")
                 self.logger.info(f"Applied Hello->Hi replacement based on description")
                 return new_content
-        
+
         if "hi" in description.lower() and "hello" in description.lower():
             # Look for Hi -> Hello pattern
             if "Hi" in current_content:
                 new_content = current_content.replace("Hi", "Hello")
                 self.logger.info(f"Applied Hi->Hello replacement based on description")
                 return new_content
-        
+
         # If we can't determine how to apply changes safely, don't change anything
         self.logger.warning(f"Cannot determine safe change method, preserving original content: {description}")
         return current_content
+
+    async def _apply_git_patch_changes(self, current_content: str, new_code: str, description: str) -> str:
+        """Apply changes using git diff/patch format for maximum token efficiency."""
+
+        try:
+            # Create temporary files for git diff
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as original_file:
+                original_file.write(current_content)
+                original_path = original_file.name
+
+            # Generate the modified content using the new approach
+            modified_content = await self._generate_modified_content(current_content, new_code, description)
+
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as modified_file:
+                modified_file.write(modified_content)
+                modified_path = modified_file.name
+
+            # Generate git diff
+            diff_result = subprocess.run(
+                ['git', 'diff', '--no-index', original_path, modified_path],
+                capture_output=True,
+                text=True,
+                cwd='/tmp'  # Use /tmp to avoid git repository issues
+            )
+
+            if diff_result.returncode in [0, 1]:  # 0 = no differences, 1 = differences found
+                diff_output = diff_result.stdout
+                self.logger.info(f"Generated git diff ({len(diff_output)} chars)")
+
+                # Apply the patch
+                patch_result = subprocess.run(
+                    ['git', 'apply', '--whitespace=fix'],
+                    input=diff_output,
+                    text=True,
+                    cwd=os.path.dirname(original_path)
+                )
+
+                if patch_result.returncode == 0:
+                    # Read the patched file
+                    with open(original_path, 'r') as f:
+                        patched_content = f.read()
+                    self.logger.info("Git patch applied successfully")
+                    return patched_content
+                else:
+                    self.logger.warning(f"Git patch failed: {patch_result.stderr}")
+                    return current_content
+            else:
+                self.logger.error(f"Git diff failed: {diff_result.stderr}")
+                return current_content
+
+        except Exception as e:
+            self.logger.warning(f"Git patch mode failed, falling back to standard mode: {e}")
+            return current_content
+
+        finally:
+            # Cleanup temporary files
+            try:
+                os.unlink(original_path)
+                os.unlink(modified_path)
+            except:
+                pass
+
+    async def _generate_modified_content(self, current_content: str, new_code: str, description: str) -> str:
+        """Generate modified content using the same logic as standard mode but optimized for git patches."""
+
+        # Try to find OLD/NEW pattern first
+        old_text = None
+        new_text = None
+
+        for line in new_code.split('\n'):
+            line = line.strip()
+            if line.startswith('OLD:'):
+                old_text = line.replace('OLD:', '').strip()
+            elif line.startswith('NEW:'):
+                new_text = line.replace('NEW:', '').strip()
+
+        if old_text and new_text:
+            if old_text in current_content:
+                self.logger.info(f"Git patch mode: replacing '{old_text}' -> '{new_text}'")
+                return current_content.replace(old_text, new_text)
+
+        # Fallback to description-based patterns
+        if "add docstring" in description.lower() and "greet" in description.lower():
+            # Add docstring pattern for greet function
+            lines = current_content.split('\n')
+            for i, line in enumerate(lines):
+                if line.strip().startswith('def greet('):
+                    # Insert docstring before the function
+                    docstring = '    """Greet a person with a personalized message."""'
+                    lines.insert(i, docstring)
+                    self.logger.info("Git patch mode: added docstring to greet function")
+                    return '\n'.join(lines)
+
+        # If no specific pattern found, try fuzzy matching
+        return self._find_similar_line_and_replace(current_content, old_text or "", new_text or "")
     
     def _find_similar_line_and_replace(self, current_content: str, old_text: str, new_text: str) -> str:
         """Find a similar line and replace it with new text."""

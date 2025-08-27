@@ -13,7 +13,7 @@ from rich.prompt import Prompt, Confirm
 from rich.markdown import Markdown
 
 from .core.config import get_settings
-from .core.logging import setup_logging, LogLevel, get_logger, CorrelationContext, operation_context
+from .core.logging import setup_logging, LogLevel, get_logger, CorrelationContext, operation_context, token_tracker
 from .core.health import run_health_checks, run_single_health_check
 from .providers.factory import LLMProviderFactory
 from .tools.filesystem_tool import FilesystemTool
@@ -190,7 +190,8 @@ def improve(
     provider: Optional[str] = typer.Option(None, "--provider", "-p", help="LLM provider"),
     temperature: Optional[float] = typer.Option(None, "--temperature", "-t", help="Temperature"),
     max_tokens: Optional[int] = typer.Option(None, "--max-tokens", help="Max tokens"),
-    debug: bool = typer.Option(False, "--debug", help="Enable debug mode with verbose output")
+    debug: bool = typer.Option(False, "--debug", help="Enable debug mode with verbose output"),
+    git_patch: bool = typer.Option(False, "--git-patch", help="Use git patch format for code changes (experimental)")
 ):
     """Improve code autonomously based on specified goal."""
     asyncio.run(_run_code_improvement_scenario({
@@ -201,7 +202,8 @@ def improve(
         "provider": provider,
         "temperature": temperature,
         "max_tokens": max_tokens,
-        "debug": debug
+        "debug": debug,
+        "git_patch": git_patch
     }))
 
 
@@ -841,6 +843,7 @@ async def _run_code_improvement_scenario(params: dict):
         max_iterations = params.get("max_iterations", 1)
         dry_run = params.get("dry_run", False)
         debug = params.get("debug", False)
+        git_patch = params.get("git_patch", False)
         
         # Set debug logging if requested
         if debug:
@@ -854,16 +857,21 @@ async def _run_code_improvement_scenario(params: dict):
                 "directory": directory,
                 "max_iterations": max_iterations,
                 "dry_run": dry_run,
+                "git_patch": git_patch,
                 "correlation_id": correlation_id
             })
             
             # Display header
+            mode_info = 'Analysis Only' if dry_run else 'Implementation'
+            if not dry_run and git_patch:
+                mode_info += ' (Git Patch Mode)'
+
             console.print(Panel(
                 f"[bold cyan]🔧 Regoose Code Improvement[/bold cyan]\n\n"
                 f"[bold]Goal:[/bold] {goal}\n"
                 f"[bold]Directory:[/bold] {directory}\n"
                 f"[bold]Max Iterations:[/bold] {max_iterations}\n"
-                f"[bold]Mode:[/bold] {'Analysis Only' if dry_run else 'Implementation'}\n" +
+                f"[bold]Mode:[/bold] {mode_info}\n" +
                 (f"[bold]Correlation ID:[/bold] {correlation_id}" if debug else ""),
                 title="Code Improvement Session",
                 border_style="cyan"
@@ -896,15 +904,19 @@ async def _run_code_improvement_scenario(params: dict):
             # Create scenario
             scenario = CodeImprovementScenario(orchestrator)
             
+            # Reset token tracking at start of operation
+            token_tracker.reset()
+
             # Prepare input data
             input_data = {
                 "goal": goal,
                 "target_directory": str(target_path),
                 "max_iterations": max_iterations,
                 "dry_run": dry_run,
-                "debug": debug
+                "debug": debug,
+                "git_patch": git_patch
             }
-            
+
             # Execute scenario
             console.print("\n[bold yellow]🔍 Starting analysis...[/bold yellow]")
             
@@ -940,9 +952,17 @@ async def _run_code_improvement_scenario(params: dict):
                     for vr in validation_results:
                         status = "✅" if vr.get("syntax_valid", False) else "❌"
                         console.print(f"  {status} {vr.get('file', 'Unknown file')}")
-                
+
+                # Show token usage summary
+                token_summary = token_tracker.format_summary()
+                console.print(f"\n{token_summary}")
+
             else:
                 console.print(f"\n[bold red]❌ Code improvement failed: {result.error}[/bold red]")
+                # Show token usage summary even on failure
+                token_summary = token_tracker.format_summary()
+                if token_tracker.total_tokens > 0:
+                    console.print(f"\n{token_summary}")
                 
             cli_logger.info("Code improvement scenario completed", metadata={
                 "success": result.success,

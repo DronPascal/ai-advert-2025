@@ -79,16 +79,24 @@ class SecureFilesystemTool(BaseTool):
         return True
     
     def _create_backup(self, path: Path) -> Optional[Path]:
-        """Create backup of existing file."""
+        """Create backup of existing file in .regoose_backups subdirectory."""
         if not path.exists():
             return None
-        
-        backup_path = path.with_suffix(path.suffix + '.backup')
+
+        # Create backup in .regoose_backups subdirectory within sandbox
+        backup_dir = self.sandbox_root / ".regoose_backups"
+        backup_dir.mkdir(exist_ok=True)
+
+        original_name = path.name
+        backup_base = backup_dir / f"regoose_backup_{original_name}"
+
+        # Add counter if file already exists
+        backup_path = backup_base
         counter = 1
         while backup_path.exists():
-            backup_path = path.with_suffix(f'{path.suffix}.backup.{counter}')
+            backup_path = backup_dir / f"regoose_backup_{original_name}_{counter}"
             counter += 1
-        
+
         shutil.copy2(path, backup_path)
         logger.info(f"Created backup: {backup_path}")
         return backup_path

@@ -87,41 +87,36 @@ class AnalyzeCodebaseAction(BaseAction):
             return ActionResult.error_result(f"Analysis failed: {str(e)}")
     
     def _build_analysis_prompt(self, goal: str, analysis_data: Dict, tree_output: str) -> str:
-        """Build analysis prompt for LLM."""
-        return f"""You are an expert code analyst. Analyze the codebase and provide improvement recommendations.
+        """Build optimized analysis prompt for LLM with token efficiency focus."""
+        # Extract key metrics for concise summary
+        total_files = analysis_data.get('total_files', 0)
+        code_files = analysis_data.get('code_files', 0)
+        languages = ', '.join(analysis_data.get('languages', {}).keys()) or 'unknown'
+        summary = analysis_data.get('summary', 'No summary available')
 
-GOAL: {goal}
+        # Truncate tree output to essential information only (max 200 chars)
+        tree_preview = tree_output[:200] + '...' if len(tree_output) > 200 else tree_output
 
-CODEBASE OVERVIEW:
-- Total files: {analysis_data.get('total_files', 0)}
-- Code files: {analysis_data.get('code_files', 0)}
-- Languages: {', '.join(analysis_data.get('languages', {}).keys())}
-- Summary: {analysis_data.get('summary', 'No summary available')}
+        return f"""Analyze for: {goal}
 
-FILE STRUCTURE:
-{tree_output[:1000] + '...' if len(tree_output) > 1000 else tree_output}
+OVERVIEW:
+- Files: {total_files} total, {code_files} code
+- Languages: {languages}
 
-ANALYSIS REQUIREMENTS:
-1. Focus on the specified goal: "{goal}"
-2. Identify specific files that need improvement
-3. Provide actionable recommendations with priorities
-4. Consider code quality, maintainability, performance, and security
-5. Be specific about what changes to make and why
+STRUCTURE:
+{tree_preview}
 
-RESPONSE FORMAT:
-## Analysis Summary
-[Brief overview of current state]
+TASK:
+- Focus on: {goal}
+- Find files needing changes
+- Prioritize actionable items
 
-## Key Issues Identified
-[List specific issues found]
+FORMAT:
+## Summary
+[2 sentences]
 
-## Improvement Recommendations
-[Prioritized list of specific recommendations]
-
-## Implementation Plan
-[Step-by-step plan for improvements]
-
-Focus on practical, implementable improvements that align with the goal."""
+## Recommendations
+[Priority: File - Change - Why]"""
     
     def _parse_analysis_response(self, response: str, analysis_data: Dict) -> tuple[str, List[Dict]]:
         """Parse LLM response to extract analysis and recommendations."""

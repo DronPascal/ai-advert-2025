@@ -45,7 +45,7 @@ class ValidateChangesAction(BaseAction):
             for result in implementation_results:
                 if result.get("success", False) and result.get("file"):
                     file_path = result["file"]
-                    validation_result = await self._validate_file(file_path, filesystem_tool)
+                    validation_result = await self._validate_file(file_path, filesystem_tool, context)
                     validation_result["step_number"] = result.get("step_number", 0)
                     validation_result["step_title"] = result.get("title", "Unknown")
                     validation_results.append(validation_result)
@@ -90,7 +90,7 @@ class ValidateChangesAction(BaseAction):
             logger.error(f"Validation failed: {e}", error=str(e))
             return ActionResult.error_result(f"Validation failed: {str(e)}")
     
-    async def _validate_file(self, file_path: str, filesystem_tool) -> Dict:
+    async def _validate_file(self, file_path: str, filesystem_tool, context: ActionContext) -> Dict:
         """Validate a single file."""
         validation_result = {
             "file": file_path,
@@ -108,6 +108,13 @@ class ValidateChangesAction(BaseAction):
                 validation_result["file_readable"] = True
                 validation_result["file_size"] = len(read_result.output)
                 validation_result["validation_notes"].append("✅ File is readable")
+
+                # Update cached content if it exists in context
+                cached_files = context.get("file_contents", {})
+                if file_path in cached_files:
+                    cached_files[file_path] = read_result.output
+                    context.set("file_contents", cached_files)
+                    logger.debug(f"Updated cached content for validated file: {file_path}")
             else:
                 validation_result["validation_notes"].append(f"❌ File not readable: {read_result.error}")
                 return validation_result
