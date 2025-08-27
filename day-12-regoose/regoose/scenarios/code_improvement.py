@@ -1,6 +1,6 @@
 """Code improvement scenario."""
 
-from typing import Dict, Any
+from typing import Dict, Any, List
 from .base import BaseScenario, ScenarioResult
 from ..core.orchestrator import ExecutionPlan
 from ..core.logging import get_logger, operation_context

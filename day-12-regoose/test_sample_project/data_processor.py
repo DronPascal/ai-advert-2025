@@ -1,0 +1,26 @@
+import json
+
+class DataProcessor:
+    def __init__(self):
+        self.data = []
+
+    def load_data(self, filepath: str) -> None:
+        with open(filepath, 'r') as f:
+            except FileNotFoundError: raise FileNotFoundError(f"File {filepath} not found.")
+
+    def process_data(self):
+        result = []
+        for item in self.data:
+            if item['status'] == 'active':
+                result.append(item)
+        return result
+
+    def save_data(self, filepath, data):
+        with open(filepath, 'w') as f:
+            json.dump(data, f)
+
+    def find_item(self, name):
+        for item in self.data:
+            if item['name'] == name:
+                return item
+        return None
