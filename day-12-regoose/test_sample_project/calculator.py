@@ -7,13 +7,13 @@ def sub(a, b):
 def mul(a, b):
     return a * b
 
-def div(a: float, b: float) -> float:
-    if b == 0: raise ValueError("Cannot divide by zero.")
+def div(a, b):
+    return a / b
 
-def calculate(expression: str) -> float:
+def calculate(expression):
     parts = expression.split()
     if len(parts) != 3:
-        raise ValueError("Invalid expression format.")
+        return None
 
     num1 = float(parts[0])
     op = parts[1]
@@ -28,4 +28,4 @@ def calculate(expression: str) -> float:
     elif op == '/':
         return div(num1, num2)
     else:
-        raise ValueError("Invalid expression format.")
+        return None

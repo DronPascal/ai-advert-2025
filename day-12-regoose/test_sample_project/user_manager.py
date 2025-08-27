@@ -2,9 +2,9 @@ class UserManager:
     def __init__(self):
         self.users = {}
 
-    def add_user(self, user_id: str, name: str, email: str) -> bool:
+    def add_user(self, user_id, name, email):
         if user_id in self.users:
-            raise ValueError("User ID already exists.")
+            return False
         self.users[user_id] = {
             'name': name,
             'email': email,
@@ -17,7 +17,7 @@ class UserManager:
 
     def update_user(self, user_id, name=None, email=None):
         if user_id not in self.users:
-            raise ValueError("User ID already exists.")
+            return False
 
         if name:
             self.users[user_id]['name'] = name
@@ -29,7 +29,7 @@ class UserManager:
         if user_id in self.users:
             del self.users[user_id]
             return True
-        raise ValueError("User ID already exists.")
+        return False
 
     def list_users(self):
         return list(self.users.values())

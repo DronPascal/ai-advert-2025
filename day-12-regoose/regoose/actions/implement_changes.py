@@ -125,10 +125,26 @@ class ImplementChangesAction(BaseAction):
                     
                     current_content = read_result.output
                     
-                    # Create backup first
-                    backup_result = await filesystem_tool.execute("backup_file", path=file_path)
-                    if backup_result.success:
-                        step_result["backup_created"] = backup_result.metadata.get("backup_path")
+                    # Create backup in temp directory (not in working directory)
+                    import tempfile
+                    import os
+                    import shutil
+
+                    # Get step info for unique backup names
+                    step_number = step.get("step_number", 0)
+
+                    # Create backup in temp directory
+                    temp_dir = tempfile.gettempdir()
+                    backup_filename = f"regoose_backup_{os.path.basename(file_path)}_{step_number}"
+                    backup_path = os.path.join(temp_dir, backup_filename)
+
+                    try:
+                        shutil.copy2(file_path, backup_path)
+                        step_result["backup_created"] = backup_path
+                        self.logger.debug(f"Backup created in temp: {backup_path}")
+                    except Exception as e:
+                        self.logger.warning(f"Failed to create backup: {e}")
+                        step_result["backup_created"] = None
                     
                     # Apply smart diff-based changes instead of full replacement
                     modified_content = await self._apply_smart_changes(

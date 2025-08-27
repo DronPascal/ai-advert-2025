@@ -4,9 +4,9 @@ class DataProcessor:
     def __init__(self):
         self.data = []
 
-    def load_data(self, filepath: str) -> None:
+    def load_data(self, filepath):
         with open(filepath, 'r') as f:
-            except FileNotFoundError: raise FileNotFoundError(f"File {filepath} not found.")
+            self.data = json.load(f)
 
     def process_data(self):
         result = []

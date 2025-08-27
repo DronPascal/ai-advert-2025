@@ -1,0 +1,152 @@
+{
+  "iterations": [
+    {
+      "iteration": 1,
+      "success": true,
+      "execution_time": 25.224416971206665,
+      "estimated_tokens": 22900,
+      "changes": {},
+      "exit_code": 0,
+      "stdout_preview": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Code Improvement Session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 \ud83d\udd27 Regoose Code Improvement                                               \u2502\n\u2502                                                                           \u2502\n\u2502 Goal: Add type hints and improve error handling                           \u2502\n\u2502 Directory:                                                                \u2502\n\u2502 /Users/appascal/Documents/Projects/ai-advert-2025/day-12-regoose/test_sam \u2502\n\u2502 ple_project                    ...",
+      "stderr_preview": "{\"level\": \"INFO\", \"message\": \"Registered health check: container_runtime\", \"component\": \"health\", \"timestamp\": 1756285293.1545541, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: openai_connectivity\", \"component\": \"health\", \"timestamp\": 1756285293.154645, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: deepseek_connectivity\", \"compo..."
+    },
+    {
+      "iteration": 2,
+      "success": true,
+      "execution_time": 20.86803913116455,
+      "estimated_tokens": 24500,
+      "changes": {},
+      "exit_code": 0,
+      "stdout_preview": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Code Improvement Session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 \ud83d\udd27 Regoose Code Improvement                                               \u2502\n\u2502                                                                           \u2502\n\u2502 Goal: Add type hints and improve error handling                           \u2502\n\u2502 Directory:                                                                \u2502\n\u2502 /Users/appascal/Documents/Projects/ai-advert-2025/day-12-regoose/test_sam \u2502\n\u2502 ple_project                    ...",
+      "stderr_preview": "{\"level\": \"INFO\", \"message\": \"Registered health check: container_runtime\", \"component\": \"health\", \"timestamp\": 1756285320.3057091, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: openai_connectivity\", \"component\": \"health\", \"timestamp\": 1756285320.305823, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: deepseek_connectivity\", \"compo..."
+    },
+    {
+      "iteration": 3,
+      "success": true,
+      "execution_time": 22.290282011032104,
+      "estimated_tokens": 22900,
+      "changes": {},
+      "exit_code": 0,
+      "stdout_preview": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Code Improvement Session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 \ud83d\udd27 Regoose Code Improvement                                               \u2502\n\u2502                                                                           \u2502\n\u2502 Goal: Add type hints and improve error handling                           \u2502\n\u2502 Directory:                                                                \u2502\n\u2502 /Users/appascal/Documents/Projects/ai-advert-2025/day-12-regoose/test_sam \u2502\n\u2502 ple_project                    ...",
+      "stderr_preview": "{\"level\": \"INFO\", \"message\": \"Registered health check: container_runtime\", \"component\": \"health\", \"timestamp\": 1756285343.18266, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: openai_connectivity\", \"component\": \"health\", \"timestamp\": 1756285343.1827672, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: deepseek_connectivity\", \"compon..."
+    },
+    {
+      "iteration": 4,
+      "success": true,
+      "execution_time": 27.095212697982788,
+      "estimated_tokens": 24500,
+      "changes": {},
+      "exit_code": 0,
+      "stdout_preview": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Code Improvement Session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 \ud83d\udd27 Regoose Code Improvement                                               \u2502\n\u2502                                                                           \u2502\n\u2502 Goal: Add type hints and improve error handling                           \u2502\n\u2502 Directory:                                                                \u2502\n\u2502 /Users/appascal/Documents/Projects/ai-advert-2025/day-12-regoose/test_sam \u2502\n\u2502 ple_project                    ...",
+      "stderr_preview": "{\"level\": \"INFO\", \"message\": \"Registered health check: container_runtime\", \"component\": \"health\", \"timestamp\": 1756285367.6035478, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: openai_connectivity\", \"component\": \"health\", \"timestamp\": 1756285367.603644, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: deepseek_connectivity\", \"compo..."
+    },
+    {
+      "iteration": 5,
+      "success": true,
+      "execution_time": 24.284145832061768,
+      "estimated_tokens": 24500,
+      "changes": {},
+      "exit_code": 0,
+      "stdout_preview": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Code Improvement Session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 \ud83d\udd27 Regoose Code Improvement                                               \u2502\n\u2502                                                                           \u2502\n\u2502 Goal: Add type hints and improve error handling                           \u2502\n\u2502 Directory:                                                                \u2502\n\u2502 /Users/appascal/Documents/Projects/ai-advert-2025/day-12-regoose/test_sam \u2502\n\u2502 ple_project                    ...",
+      "stderr_preview": "{\"level\": \"INFO\", \"message\": \"Registered health check: container_runtime\", \"component\": \"health\", \"timestamp\": 1756285396.6157691, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: openai_connectivity\", \"component\": \"health\", \"timestamp\": 1756285396.6158662, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: deepseek_connectivity\", \"comp..."
+    },
+    {
+      "iteration": 6,
+      "success": true,
+      "execution_time": 23.528693914413452,
+      "estimated_tokens": 24500,
+      "changes": {},
+      "exit_code": 0,
+      "stdout_preview": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Code Improvement Session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 \ud83d\udd27 Regoose Code Improvement                                               \u2502\n\u2502                                                                           \u2502\n\u2502 Goal: Add type hints and improve error handling                           \u2502\n\u2502 Directory:                                                                \u2502\n\u2502 /Users/appascal/Documents/Projects/ai-advert-2025/day-12-regoose/test_sam \u2502\n\u2502 ple_project                    ...",
+      "stderr_preview": "{\"level\": \"INFO\", \"message\": \"Registered health check: container_runtime\", \"component\": \"health\", \"timestamp\": 1756285423.003028, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: openai_connectivity\", \"component\": \"health\", \"timestamp\": 1756285423.003127, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: deepseek_connectivity\", \"compon..."
+    },
+    {
+      "iteration": 7,
+      "success": true,
+      "execution_time": 23.340242862701416,
+      "estimated_tokens": 25300,
+      "changes": {},
+      "exit_code": 0,
+      "stdout_preview": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Code Improvement Session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 \ud83d\udd27 Regoose Code Improvement                                               \u2502\n\u2502                                                                           \u2502\n\u2502 Goal: Add type hints and improve error handling                           \u2502\n\u2502 Directory:                                                                \u2502\n\u2502 /Users/appascal/Documents/Projects/ai-advert-2025/day-12-regoose/test_sam \u2502\n\u2502 ple_project                    ...",
+      "stderr_preview": "{\"level\": \"INFO\", \"message\": \"Registered health check: container_runtime\", \"component\": \"health\", \"timestamp\": 1756285448.4769988, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: openai_connectivity\", \"component\": \"health\", \"timestamp\": 1756285448.477112, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: deepseek_connectivity\", \"compo..."
+    },
+    {
+      "iteration": 8,
+      "success": true,
+      "execution_time": 26.58828091621399,
+      "estimated_tokens": 24500,
+      "changes": {},
+      "exit_code": 0,
+      "stdout_preview": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Code Improvement Session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 \ud83d\udd27 Regoose Code Improvement                                               \u2502\n\u2502                                                                           \u2502\n\u2502 Goal: Add type hints and improve error handling                           \u2502\n\u2502 Directory:                                                                \u2502\n\u2502 /Users/appascal/Documents/Projects/ai-advert-2025/day-12-regoose/test_sam \u2502\n\u2502 ple_project                    ...",
+      "stderr_preview": "{\"level\": \"INFO\", \"message\": \"Registered health check: container_runtime\", \"component\": \"health\", \"timestamp\": 1756285473.769207, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: openai_connectivity\", \"component\": \"health\", \"timestamp\": 1756285473.7693079, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: deepseek_connectivity\", \"compo..."
+    },
+    {
+      "iteration": 9,
+      "success": true,
+      "execution_time": 24.788285970687866,
+      "estimated_tokens": 24500,
+      "changes": {},
+      "exit_code": 0,
+      "stdout_preview": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Code Improvement Session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 \ud83d\udd27 Regoose Code Improvement                                               \u2502\n\u2502                                                                           \u2502\n\u2502 Goal: Add type hints and improve error handling                           \u2502\n\u2502 Directory:                                                                \u2502\n\u2502 /Users/appascal/Documents/Projects/ai-advert-2025/day-12-regoose/test_sam \u2502\n\u2502 ple_project                    ...",
+      "stderr_preview": "{\"level\": \"INFO\", \"message\": \"Registered health check: container_runtime\", \"component\": \"health\", \"timestamp\": 1756285502.487461, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: openai_connectivity\", \"component\": \"health\", \"timestamp\": 1756285502.487556, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: deepseek_connectivity\", \"compon..."
+    },
+    {
+      "iteration": 10,
+      "success": true,
+      "execution_time": 31.317010164260864,
+      "estimated_tokens": 24500,
+      "changes": {},
+      "exit_code": 0,
+      "stdout_preview": "\u256d\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Code Improvement Session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256e\n\u2502 \ud83d\udd27 Regoose Code Improvement                                               \u2502\n\u2502                                                                           \u2502\n\u2502 Goal: Add type hints and improve error handling                           \u2502\n\u2502 Directory:                                                                \u2502\n\u2502 /Users/appascal/Documents/Projects/ai-advert-2025/day-12-regoose/test_sam \u2502\n\u2502 ple_project                    ...",
+      "stderr_preview": "{\"level\": \"INFO\", \"message\": \"Registered health check: container_runtime\", \"component\": \"health\", \"timestamp\": 1756285529.1796532, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: openai_connectivity\", \"component\": \"health\", \"timestamp\": 1756285529.179757, \"correlation_id\": null, \"metadata\": {}, \"duration_ms\": null, \"error\": null}\n{\"level\": \"INFO\", \"message\": \"Registered health check: deepseek_connectivity\", \"compo..."
+    }
+  ],
+  "summary": {
+    "total_iterations": 10,
+    "successful_iterations": 10,
+    "success_rate": 100.0,
+    "total_tokens": 242600,
+    "average_execution_time": 24.932461047172545,
+    "token_improvement_percent": -6.986899563318777,
+    "total_type_hints": 0,
+    "total_error_handling": 0
+  },
+  "optimizations_applied": [
+    {
+      "iteration": 1,
+      "optimization": "OPTIMIZATION: Reduce token usage by shortening prompts\nOPTIMIZATION: Improve change detection and implementation\nOPTIMIZATION: Enhance type hint detection and addition\nOPTIMIZATION: Improve error handling patterns\n"
+    },
+    {
+      "iteration": 2,
+      "optimization": "OPTIMIZATION: Reduce token usage by shortening prompts\nOPTIMIZATION: Improve change detection and implementation\nOPTIMIZATION: Enhance type hint detection and addition\nOPTIMIZATION: Improve error handling patterns\n"
+    },
+    {
+      "iteration": 3,
+      "optimization": "OPTIMIZATION: Reduce token usage by shortening prompts\nOPTIMIZATION: Improve change detection and implementation\nOPTIMIZATION: Enhance type hint detection and addition\nOPTIMIZATION: Improve error handling patterns\n"
+    },
+    {
+      "iteration": 4,
+      "optimization": "OPTIMIZATION: Reduce token usage by shortening prompts\nOPTIMIZATION: Improve change detection and implementation\nOPTIMIZATION: Enhance type hint detection and addition\nOPTIMIZATION: Improve error handling patterns\n"
+    },
+    {
+      "iteration": 5,
+      "optimization": "OPTIMIZATION: Reduce token usage by shortening prompts\nOPTIMIZATION: Improve change detection and implementation\nOPTIMIZATION: Enhance type hint detection and addition\nOPTIMIZATION: Improve error handling patterns\n"
+    },
+    {
+      "iteration": 6,
+      "optimization": "OPTIMIZATION: Reduce token usage by shortening prompts\nOPTIMIZATION: Improve change detection and implementation\nOPTIMIZATION: Enhance type hint detection and addition\nOPTIMIZATION: Improve error handling patterns\n"
+    },
+    {
+      "iteration": 7,
+      "optimization": "OPTIMIZATION: Reduce token usage by shortening prompts\nOPTIMIZATION: Improve change detection and implementation\nOPTIMIZATION: Enhance type hint detection and addition\nOPTIMIZATION: Improve error handling patterns\n"
+    },
+    {
+      "iteration": 8,
+      "optimization": "OPTIMIZATION: Reduce token usage by shortening prompts\nOPTIMIZATION: Improve change detection and implementation\nOPTIMIZATION: Enhance type hint detection and addition\nOPTIMIZATION: Improve error handling patterns\n"
+    },
+    {
+      "iteration": 9,
+      "optimization": "OPTIMIZATION: Reduce token usage by shortening prompts\nOPTIMIZATION: Improve change detection and implementation\nOPTIMIZATION: Enhance type hint detection and addition\nOPTIMIZATION: Improve error handling patterns\n"
+    }
+  ]
+}
