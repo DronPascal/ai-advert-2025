@@ -8,7 +8,7 @@ class DataProcessor:
         with open(filepath, 'r') as f:
             self.data = json.load(f)
 
-    def process_data(self) -> list:
+    def process_data(self):
         result = []
         for item in self.data:
             if item['status'] == 'active':

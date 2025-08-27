@@ -2,7 +2,7 @@ class UserManager:
     def __init__(self):
         self.users = {}
 
-    def add_user(self, user_id: str, name: str, email: str) -> bool:
+    def add_user(self, user_id, name, email):
         if user_id in self.users:
             return False
         self.users[user_id] = {

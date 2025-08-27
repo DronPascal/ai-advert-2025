@@ -10,7 +10,7 @@ def mul(a, b):
 def div(a, b):
     return a / b
 
-def calculate(expression: str) -> float:
+def calculate(expression):
     parts = expression.split()
     if len(parts) != 3:
         return None
