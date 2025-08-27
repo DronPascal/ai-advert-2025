@@ -36,6 +36,7 @@ class ImplementChangesAction(BaseAction):
             
             implementation_plan = context.get("implementation_plan", [])
             goal = context.get("goal", "Code improvement")
+            git_patch = context.get("git_patch", False)
             
             self.logger.info(f"Implementing {len(implementation_plan)} planned changes")
             
@@ -49,7 +50,7 @@ class ImplementChangesAction(BaseAction):
             failed_changes = 0
             
             for step in implementation_plan:
-                step_result = await self._implement_step(step, filesystem_tool)
+                step_result = await self._implement_step(step, filesystem_tool, context)
                 results.append(step_result)
                 
                 if step_result["success"]:
@@ -81,7 +82,7 @@ class ImplementChangesAction(BaseAction):
             self.logger.error(f"Implementation failed: {e}", error=str(e))
             return ActionResult.error_result(f"Implementation failed: {str(e)}")
     
-    async def _implement_step(self, step: Dict, filesystem_tool) -> Dict:
+    async def _implement_step(self, step: Dict, filesystem_tool, context: ActionContext) -> Dict:
         """Implement a single step from the plan."""
         step_result = {
             "step_number": step.get("step_number", 0),
@@ -120,38 +121,34 @@ class ImplementChangesAction(BaseAction):
             elif change_type == "modification" or change_type == "edit" or change_type == "modify_file":
                 # Modify existing file with smart line-by-line changes
                 if code:
-                    # Read existing file first
-                    read_result = await filesystem_tool.execute("read_file", path=file_path)
-                    if not read_result.success:
-                        step_result["error"] = f"Failed to read existing file: {read_result.error}"
-                        return step_result
+                    # Try to get content from cached context first (to avoid repeated file reads)
+                    cached_files = context.get("file_contents", {})
+                    current_content = None
+
+                    if file_path in cached_files:
+                        current_content = cached_files[file_path]
+                        self.logger.debug(f"Using cached content for {file_path}")
+                    else:
+                        # Read existing file if not in cache
+                        read_result = await filesystem_tool.execute("read_file", path=file_path)
+                        if not read_result.success:
+                            step_result["error"] = f"Failed to read existing file: {read_result.error}"
+                            return step_result
+                        current_content = read_result.output
                     
-                    current_content = read_result.output
-                    
-                    # Create backup in temp directory (not in working directory)
-                    import tempfile
-                    import os
-                    import shutil
-
-                    # Get step info for unique backup names
-                    step_number = step.get("step_number", 0)
-
-                    # Create backup in temp directory
-                    temp_dir = tempfile.gettempdir()
-                    backup_filename = f"regoose_backup_{os.path.basename(file_path)}_{step_number}"
-                    backup_path = os.path.join(temp_dir, backup_filename)
-
-                    try:
-                        shutil.copy2(file_path, backup_path)
-                        step_result["backup_created"] = backup_path
-                        self.logger.debug(f"Backup created in temp: {backup_path}")
-                    except Exception as e:
-                        self.logger.warning(f"Failed to create backup: {e}")
+                    # Create backup using secure filesystem tool
+                    # This will create backup in .regoose_backups directory within sandbox
+                    backup_result = await filesystem_tool.execute("backup_file", path=file_path)
+                    if backup_result.success:
+                        step_result["backup_created"] = backup_result.metadata.get("backup_path")
+                        self.logger.debug(f"Backup created: {backup_result.metadata.get('backup_path')}")
+                    else:
+                        self.logger.warning(f"Failed to create backup: {backup_result.error}")
                         step_result["backup_created"] = None
                     
                     # Apply smart diff-based changes instead of full replacement
                     modified_content = await self._apply_smart_changes(
-                        current_content, code, description
+                        current_content, code, description, git_patch
                     )
                     
                     # Write modified content
@@ -164,7 +161,7 @@ class ImplementChangesAction(BaseAction):
                 else:
                     # If no code provided, try to make intelligent changes based on description
                     step_result = await self._intelligent_modification(
-                        step, filesystem_tool, step_result
+                        step, filesystem_tool, step_result, context
                     )
             
             elif change_type == "deletion" or change_type == "delete":
@@ -191,20 +188,27 @@ class ImplementChangesAction(BaseAction):
         
         return step_result
     
-    async def _intelligent_modification(self, step: Dict, filesystem_tool, step_result: Dict) -> Dict:
+    async def _intelligent_modification(self, step: Dict, filesystem_tool, step_result: Dict, context: ActionContext) -> Dict:
         """Make intelligent modifications when specific code is not provided."""
         
         file_path = step.get("file", "")
         description = step.get("description", "")
         
         try:
-            # Read current file content
-            read_result = await filesystem_tool.execute("read_file", path=file_path)
-            if not read_result.success:
-                step_result["error"] = f"Cannot read file for modification: {read_result.error}"
-                return step_result
-            
-            current_content = read_result.output
+            # Try to get content from cached context first (to avoid repeated file reads)
+            cached_files = context.get("file_contents", {})
+            current_content = None
+
+            if file_path in cached_files:
+                current_content = cached_files[file_path]
+                self.logger.debug(f"Using cached content for intelligent modification: {file_path}")
+            else:
+                # Read current file content if not in cache
+                read_result = await filesystem_tool.execute("read_file", path=file_path)
+                if not read_result.success:
+                    step_result["error"] = f"Cannot read file for modification: {read_result.error}"
+                    return step_result
+                current_content = read_result.output
             
             # Create backup
             backup_result = await filesystem_tool.execute("backup_file", path=file_path)
@@ -233,6 +237,12 @@ OUTPUT: Complete improved code only."""
                 lines = improved_code.split('\n')
                 improved_code = '\n'.join(lines[1:-1]) if len(lines) > 2 else improved_code
             
+            # Create backup before writing improved code
+            backup_result = await filesystem_tool.execute("backup_file", path=file_path)
+            if backup_result.success:
+                step_result["backup_created"] = backup_result.metadata.get("backup_path")
+                self.logger.debug(f"Backup created for intelligent modification: {backup_result.metadata.get('backup_path')}")
+
             # Write improved code
             write_result = await filesystem_tool.execute("write_file", path=file_path, content=improved_code)
             if write_result.success:
@@ -317,13 +327,11 @@ Changes Made:
         
         return report
     
-    async def _apply_smart_changes(self, current_content: str, new_code: str, description: str) -> str:
+    async def _apply_smart_changes(self, current_content: str, new_code: str, description: str, git_patch: bool = False) -> str:
         """Apply smart changes to existing content instead of full replacement."""
 
         # Check if git patch mode is enabled
-        use_git_patch = os.environ.get('REGOOSE_USE_GIT_PATCH', 'false').lower() == 'true'
-
-        if use_git_patch:
+        if git_patch:
             return await self._apply_git_patch_changes(current_content, new_code, description)
 
         # Standard mode - NEVER replace entire file content unless explicitly requested

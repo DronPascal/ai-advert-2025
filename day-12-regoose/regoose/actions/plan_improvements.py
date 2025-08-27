@@ -91,6 +91,7 @@ class PlanImprovementsAction(BaseAction):
                 data={
                     "implementation_plan": implementation_plan,
                     "analyzed_files": list(file_contents.keys()),
+                    "file_contents": file_contents,  # Cache file contents for subsequent steps
                     "planning_response": response.content,
                     "goal": goal,
                     "selected_recommendations": recommendations
@@ -108,16 +109,16 @@ class PlanImprovementsAction(BaseAction):
                              analysis: str, file_contents: Dict[str, str]) -> str:
         """Build optimized planning prompt for LLM with maximum token efficiency."""
 
-        # Create concise file summary (max 1000 chars total)
+        # Create concise file summary (max 1500 chars total)
         files_summary = ""
         if file_contents:
             files_summary = "FILES:\n"
             total_chars = 0
             for file_path, content in file_contents.items():
-                # Limit each file to 300 chars
-                truncated = content[:300] + "..." if len(content) > 300 else content
+                # Limit each file to 500 chars
+                truncated = content[:500] + "..." if len(content) > 500 else content
                 file_entry = f"--- {file_path} ---\n{truncated}\n"
-                if total_chars + len(file_entry) < 1000:
+                if total_chars + len(file_entry) < 1500:
                     files_summary += file_entry
                     total_chars += len(file_entry)
                 else:
@@ -128,7 +129,7 @@ class PlanImprovementsAction(BaseAction):
         for i, rec in enumerate(recommendations[:5], 1):  # Limit to top 5
             recs_text += f"{i}. {rec.get('title', 'Unknown')}\n"
 
-        return f"""MINIMAL changes for: {goal}
+        return f"""Plan changes for: {goal}
 
 ANALYSIS:
 {analysis[:300] + '...' if len(analysis) > 300 else analysis}
@@ -139,14 +140,14 @@ RECOMMENDATIONS:
 FILES:
 {files_summary}
 
-INSTRUCTIONS:
-- MAX 1-2 changes only
-- Use exact OLD:/NEW: format
-- Target specific lines only
+RULES:
+- 1-3 changes max
+- Use OLD:/NEW: format
+- Exact matches only
 
 FORMAT:
 ## Plan
-### Step 1: [Change]
+### Step 1: [Action]
 - **File:** path
 - **Code:** OLD: text NEW: replacement"""
     

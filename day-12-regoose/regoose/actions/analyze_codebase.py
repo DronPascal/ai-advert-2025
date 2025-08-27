@@ -94,8 +94,8 @@ class AnalyzeCodebaseAction(BaseAction):
         languages = ', '.join(analysis_data.get('languages', {}).keys()) or 'unknown'
         summary = analysis_data.get('summary', 'No summary available')
 
-        # Truncate tree output to essential information only (max 300 chars)
-        tree_preview = tree_output[:300] + '...' if len(tree_output) > 300 else tree_output
+        # Truncate tree output to essential information only (max 200 chars)
+        tree_preview = tree_output[:200] + '...' if len(tree_output) > 200 else tree_output
 
         return f"""Analyze for: {goal}
 
@@ -106,10 +106,10 @@ OVERVIEW:
 STRUCTURE:
 {tree_preview}
 
-REQUIREMENTS:
-1. Focus on: {goal}
-2. Identify specific files needing changes
-3. Prioritize actionable improvements
+TASK:
+- Focus on: {goal}
+- Find files needing changes
+- Prioritize actionable items
 
 FORMAT:
 ## Summary
