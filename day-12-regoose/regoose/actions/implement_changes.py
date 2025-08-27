@@ -330,7 +330,25 @@ Changes Made:
         current_lines = current_content.split('\n')
         new_lines = new_code.split('\n')
         
-        # Look for comments or function names mentioned in description
+        # First, try to find OLD/NEW pattern in the new_code
+        old_text = None
+        new_text = None
+        
+        for i, line in enumerate(new_lines):
+            if line.strip().startswith('// OLD:') or line.strip().startswith('OLD:'):
+                old_text = line.split(':', 1)[1].strip()
+            elif line.strip().startswith('// NEW:') or line.strip().startswith('NEW:'):
+                new_text = line.split(':', 1)[1].strip()
+        
+        # If we have OLD/NEW pattern, do exact replacement
+        if old_text and new_text:
+            if old_text in current_content:
+                return current_content.replace(old_text, new_text)
+            else:
+                # Try to find similar lines
+                return self._find_similar_line_and_replace(current_content, old_text, new_text)
+        
+        # Fallback to keyword-based search
         keywords = description.lower().split()
         
         best_match_start = 0
@@ -361,8 +379,36 @@ Changes Made:
             result_lines = current_lines[:best_match_start] + new_lines + current_lines[best_match_start + len(new_lines):]
             return '\n'.join(result_lines)
         
-        # If no good match found, append at the end
-        return current_content + '\n\n' + new_code
+        # If no good match found, DON'T change the file
+        return current_content
+    
+    def _find_similar_line_and_replace(self, current_content: str, old_text: str, new_text: str) -> str:
+        """Find a similar line and replace it with new text."""
+        
+        current_lines = current_content.split('\n')
+        
+        # Look for lines that contain similar words
+        old_words = set(old_text.lower().split())
+        best_match_line = -1
+        best_match_score = 0
+        
+        for i, line in enumerate(current_lines):
+            line_words = set(line.lower().split())
+            # Calculate similarity score
+            common_words = old_words.intersection(line_words)
+            if len(common_words) > 0:
+                score = len(common_words) / max(len(old_words), len(line_words))
+                if score > best_match_score:
+                    best_match_score = score
+                    best_match_line = i
+        
+        # If we found a good match, replace it
+        if best_match_line >= 0 and best_match_score > 0.3:  # 30% similarity threshold
+            current_lines[best_match_line] = new_text
+            return '\n'.join(current_lines)
+        
+        # If no good match found, don't change anything
+        return current_content
     
     def _merge_line_changes(self, current_content: str, new_code: str) -> str:
         """Merge line-by-line changes when content is similar length."""

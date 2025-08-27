@@ -136,7 +136,10 @@ CREATE A DETAILED IMPLEMENTATION PLAN:
 4. **Consider** dependencies between changes
 5. **Provide** step-by-step instructions
 
-IMPORTANT: Do NOT show complete files. Show ONLY the specific changes needed.
+IMPORTANT: For MODIFICATIONS, you MUST specify:
+- The EXACT text to find (OLD line)
+- The EXACT text to replace it with (NEW line)
+- The context where this change should happen
 
 RESPONSE FORMAT:
 ## Implementation Plan
@@ -147,8 +150,10 @@ RESPONSE FORMAT:
 - **Description:** What to change and why
 - **Code:** 
 ```language
-// Show ONLY the specific lines that need to change
-// For modifications: show the OLD line and NEW line
+// For MODIFICATIONS, use this format:
+// OLD: exact text to find and replace
+// NEW: exact text to replace with
+
 // For additions: show where to add and what to add
 // For deletions: show what to remove
 ```
@@ -160,7 +165,7 @@ RESPONSE FORMAT:
 [How to verify changes work]
 
 Focus on practical, implementable changes that directly address the goal.
-Remember: Show ONLY changes, NOT complete files."""
+Remember: For modifications, specify OLD and NEW text exactly."""
     
     def _parse_planning_response(self, response: str, recommendations: List[Dict]) -> List[Dict]:
         """Parse planning response into structured implementation steps."""
