@@ -132,9 +132,11 @@ CREATE A DETAILED IMPLEMENTATION PLAN:
 
 1. **Prioritize** the most important changes first
 2. **Be specific** about file modifications needed
-3. **Include** exact code changes where possible
+3. **Include** ONLY the specific lines that need to change
 4. **Consider** dependencies between changes
 5. **Provide** step-by-step instructions
+
+IMPORTANT: Do NOT show complete files. Show ONLY the specific changes needed.
 
 RESPONSE FORMAT:
 ## Implementation Plan
@@ -145,7 +147,10 @@ RESPONSE FORMAT:
 - **Description:** What to change and why
 - **Code:** 
 ```language
-// Specific code changes
+// Show ONLY the specific lines that need to change
+// For modifications: show the OLD line and NEW line
+// For additions: show where to add and what to add
+// For deletions: show what to remove
 ```
 
 ### Step 2: [Title]
@@ -154,7 +159,8 @@ RESPONSE FORMAT:
 ## Validation Steps
 [How to verify changes work]
 
-Focus on practical, implementable changes that directly address the goal."""
+Focus on practical, implementable changes that directly address the goal.
+Remember: Show ONLY changes, NOT complete files."""
     
     def _parse_planning_response(self, response: str, recommendations: List[Dict]) -> List[Dict]:
         """Parse planning response into structured implementation steps."""
@@ -213,16 +219,18 @@ Focus on practical, implementable changes that directly address the goal."""
             if current_step and stripped_line:
                 if stripped_line.startswith('- **File:**'):
                     file_path = stripped_line.replace('- **File:**', '').strip()
-                    # Clean up any markdown artifacts (backticks, etc.)
-                    file_path = file_path.strip('`').strip()
+                    # Clean up any markdown artifacts (backticks, brackets, parentheses, etc.)
+                    file_path = file_path.strip('`').strip('()').strip('[]').strip()
+                    # Remove common markdown suffixes
+                    file_path = file_path.replace('` (assuming a test file exists)', '').strip()
                     # Normalize path - remove directory prefixes to make relative
                     if '/' in file_path:
                         file_path = file_path.split('/')[-1]  # Take only filename
                     current_step["file"] = file_path
                 elif stripped_line.startswith('- **Change Type:**'):
                     change_type = stripped_line.replace('- **Change Type:**', '').strip().lower()
-                    # Clean up markdown artifacts
-                    change_type = change_type.strip('`').strip()
+                    # Clean up markdown artifacts and brackets
+                    change_type = change_type.strip('`').strip('[]').strip()
                     current_step["change_type"] = change_type
                 elif stripped_line.startswith('- **Description:**'):
                     description = stripped_line.replace('- **Description:**', '').strip()

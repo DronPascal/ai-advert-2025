@@ -23,18 +23,19 @@ class GenerateImprovementReportAction(BaseAction):
             self.logger.info("Generating code improvement report")
             
             implementation_plan = context.get("implementation_plan", [])
-            modified_files = context.get("modified_files", [])
+            implementation_results = context.get("implementation_results", [])
             validation_results = context.get("validation_results", {})
             goal = context.get("goal", "Code improvement")
             
             # Count successes and failures
             total_steps = len(implementation_plan)
-            successful_changes = len([f for f in modified_files if f.get("success", False)])
+            successful_changes = len([r for r in implementation_results if r.get("success", False)])
             failed_changes = total_steps - successful_changes
             
             # Calculate validation stats
-            validation_passed = sum(1 for result in validation_results.get("results", []) if result.get("valid", False))
-            validation_failed = len(validation_results.get("results", [])) - validation_passed
+            validation_data = validation_results.get("results", []) if isinstance(validation_results, dict) else []
+            validation_passed = sum(1 for result in validation_data if isinstance(result, dict) and result.get("valid", False))
+            validation_failed = len(validation_data) - validation_passed
             
             # Generate summary
             summary = self._generate_summary(
@@ -44,7 +45,7 @@ class GenerateImprovementReportAction(BaseAction):
             
             # Generate detailed report
             report = self._generate_detailed_report(
-                goal, implementation_plan, modified_files, 
+                goal, implementation_plan, implementation_results, 
                 validation_results, summary
             )
             
@@ -89,7 +90,7 @@ class GenerateImprovementReportAction(BaseAction):
 """
     
     def _generate_detailed_report(self, goal: str, plan: List[Dict], 
-                                modified_files: List[Dict], validation_results: Dict, 
+                                implementation_results: List[Dict], validation_results: Dict, 
                                 summary: str) -> str:
         """Generate detailed improvement report."""
         
@@ -106,7 +107,7 @@ class GenerateImprovementReportAction(BaseAction):
 """
         
         for i, step in enumerate(plan, 1):
-            status = "✅ SUCCESS" if any(f.get("file") == step.get("file") and f.get("success") for f in modified_files) else "❌ FAILED"
+            status = "✅ SUCCESS" if any(f.get("file") == step.get("file") and f.get("success") for f in implementation_results) else "❌ FAILED"
             report += f"""
 **Step {i}: {step.get('description', 'Unknown step')}** - {status}
 - File: `{step.get('file', 'Unknown')}`
@@ -115,8 +116,8 @@ class GenerateImprovementReportAction(BaseAction):
         
         report += "\n### Modified Files\n"
         
-        if modified_files:
-            for file_info in modified_files:
+        if implementation_results:
+            for file_info in implementation_results:
                 file_path = file_info.get("file", "Unknown")
                 success = file_info.get("success", False)
                 status_icon = "✅" if success else "❌"
@@ -138,7 +139,7 @@ class GenerateImprovementReportAction(BaseAction):
         
         report += "\n### Validation Results\n"
         
-        validation_data = validation_results.get("results", [])
+        validation_data = validation_results.get("results", []) if isinstance(validation_results, dict) else []
         if validation_data:
             for result in validation_data:
                 file_path = result.get("file", "Unknown")

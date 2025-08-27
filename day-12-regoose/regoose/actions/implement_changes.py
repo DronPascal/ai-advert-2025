@@ -122,7 +122,7 @@ class ImplementChangesAction(BaseAction):
                         step_result["error"] = f"Failed to read existing file: {read_result.error}"
                         return step_result
                     
-                    current_content = read_result.content
+                    current_content = read_result.output
                     
                     # Create backup first
                     backup_result = await filesystem_tool.execute("backup_file", path=file_path)
@@ -162,7 +162,7 @@ class ImplementChangesAction(BaseAction):
                 if change_type in ["review", "analysis", "documentation", "note", "addition/modification"]:
                     step_result["status"] = "skipped"
                     step_result["message"] = f"Skipping non-file change type: {change_type}"
-                    self.logger.info(f"⚠️ Step {step_idx + 1}: Skipped non-file change: {change_type}")
+                    self.logger.info(f"⚠️ Step {step_result['step_number']}: Skipped non-file change: {change_type}")
                 else:
                     step_result["error"] = f"Unknown change type: {change_type}"
             
@@ -302,22 +302,27 @@ Changes Made:
     async def _apply_smart_changes(self, current_content: str, new_code: str, description: str) -> str:
         """Apply smart changes to existing content instead of full replacement."""
         
-        # If the new code is significantly shorter than current content,
-        # it's likely a targeted change, not a full replacement
+        # NEVER replace entire file content unless explicitly requested
+        # Always try to make targeted changes first
+        
         current_lines = current_content.split('\n')
         new_lines = new_code.split('\n')
         
-        # If new code is less than 50% of original, treat as targeted change
-        if len(new_lines) < len(current_lines) * 0.5:
-            # Look for best match in the current content to replace
+        # If new code is very short (1-3 lines), treat as targeted change
+        if len(new_lines) <= 3:
             return self._find_and_replace_section(current_content, new_code, description)
         
-        # If the new code is similar length, check for line-by-line changes
-        if abs(len(new_lines) - len(current_lines)) <= 5:
+        # If new code is similar length, try line-by-line merge
+        if abs(len(new_lines) - len(current_lines)) <= 3:
             return self._merge_line_changes(current_content, new_code)
         
-        # Default to full replacement if we can't determine targeted changes
-        return new_code
+        # For larger changes, be VERY conservative - only replace if it's clearly a modification
+        if "TODO" in description or "FIXME" in description or "change" in description.lower():
+            return self._find_and_replace_section(current_content, new_code, description)
+        
+        # If we can't determine how to apply changes safely, DON'T change the file
+        # This prevents accidental file corruption
+        return current_content
     
     def _find_and_replace_section(self, current_content: str, new_code: str, description: str) -> str:
         """Find the best section to replace based on description and new code."""
