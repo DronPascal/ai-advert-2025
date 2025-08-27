@@ -13,6 +13,8 @@ from rich.prompt import Prompt, Confirm
 from rich.markdown import Markdown
 
 from .core.config import get_settings
+from .core.logging import setup_logging, LogLevel, get_logger, CorrelationContext, operation_context
+from .core.health import run_health_checks, run_single_health_check
 from .providers.factory import LLMProviderFactory
 from .tools.filesystem_tool import FilesystemTool
 from .tools.shell_tool import ShellTool
@@ -22,7 +24,9 @@ from .core.orchestrator import ActionOrchestrator
 from .scenarios.test_generation import TestGenerationScenario
 from .scenarios.github_pr_review import GitHubPRReviewScenario
 from .scenarios.mcp_pr_review import MCPGitHubPRReviewScenario
+from .scenarios.code_improvement import CodeImprovementScenario
 from .providers.mcp_github_provider import MCPGitHubProvider
+from .tools.secure_filesystem_tool import SecureFilesystemTool
 
 app = typer.Typer(
     name="regoose",
@@ -30,6 +34,12 @@ app = typer.Typer(
     add_completion=False
 )
 console = Console()
+
+# Initialize logging on import
+settings = get_settings()
+log_level = LogLevel.DEBUG if settings.debug else LogLevel.INFO
+setup_logging(log_level)
+cli_logger = get_logger("cli")
 
 
 def extract_llm_params(params: dict) -> dict:
@@ -45,7 +55,7 @@ def extract_llm_params(params: dict) -> dict:
     return {k: v for k, v in llm_params.items() if v is not None}
 
 
-def create_tools(settings, working_dir: str = ".", include_github: bool = False):
+def create_tools(settings, working_dir: str = ".", include_github: bool = False, secure_filesystem: bool = False):
     """Create tools for orchestrator."""
     tools = {
         "filesystem": FilesystemTool(working_dir),
@@ -56,6 +66,10 @@ def create_tools(settings, working_dir: str = ".", include_github: bool = False)
         ),
         "working_dir": working_dir
     }
+    
+    # Add secure filesystem tool if requested
+    if secure_filesystem:
+        tools["secure_filesystem"] = SecureFilesystemTool(working_dir)
     
     # Add GitHub tool if requested and configured
     if include_github and settings.github_token:
@@ -85,7 +99,10 @@ def generate(
     frequency_penalty: Optional[float] = typer.Option(None, "--frequency-penalty", help="Frequency penalty (-2.0 to 2.0)"),
 ):
     """Generate tests using test generation scenario."""
-    asyncio.run(_run_test_generation_scenario({
+    with operation_context("generate_tests", "cli") as correlation_id:
+        cli_logger.info("Starting test generation command",
+                       metadata={"provider": provider, "language": language})
+        asyncio.run(_run_test_generation_scenario({
         "code": code,
         "file": file,
         "language": language,
@@ -162,6 +179,38 @@ def review_pr_mcp(
         "presence_penalty": presence_penalty,
         "frequency_penalty": frequency_penalty
     }))
+
+
+@app.command()
+def improve(
+    goal: str = typer.Option(..., "--goal", "-g", help="Goal or specification for code improvement"),
+    directory: Optional[str] = typer.Option(".", "--directory", "-d", help="Target directory to improve"),
+    max_iterations: int = typer.Option(1, "--max-iterations", "-i", help="Maximum improvement iterations"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Analyze only, don't make changes"),
+    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="LLM provider"),
+    temperature: Optional[float] = typer.Option(None, "--temperature", "-t", help="Temperature"),
+    max_tokens: Optional[int] = typer.Option(None, "--max-tokens", help="Max tokens"),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug mode with verbose output")
+):
+    """Improve code autonomously based on specified goal."""
+    asyncio.run(_run_code_improvement_scenario({
+        "goal": goal,
+        "directory": directory,
+        "max_iterations": max_iterations,
+        "dry_run": dry_run,
+        "provider": provider,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "debug": debug
+    }))
+
+
+@app.command()
+def health(
+    check: Optional[str] = typer.Option(None, "--check", "-c", help="Run specific health check")
+):
+    """Check system health and component status."""
+    asyncio.run(_run_health_check(check))
 
 
 @app.command()
@@ -715,6 +764,196 @@ def _setup_configuration():
             console.print("[green]✅ Configuration is valid![/green]")
         except Exception as e:
             console.print(f"[red]❌ Configuration error: {e}[/red]")
+
+
+async def _run_health_check(check_name: Optional[str] = None):
+    """Run health checks and display results."""
+    from rich.table import Table
+    from rich.text import Text
+    
+    cli_logger.info("Running health checks", metadata={"specific_check": check_name})
+    
+    try:
+        if check_name:
+            results = await run_single_health_check(check_name)
+        else:
+            results = await run_health_checks()
+        
+        # Display results in a nice table
+        table = Table(title="System Health Check")
+        table.add_column("Component", style="cyan", no_wrap=True)
+        table.add_column("Status", style="bold")
+        table.add_column("Message", style="dim")
+        table.add_column("Details", style="dim")
+        
+        for check_name, result in results.get("checks", {}).items():
+            status = result["status"]
+            
+            # Color status based on result
+            if status == "healthy":
+                status_text = Text("✅ Healthy", style="green")
+            elif status == "warning":
+                status_text = Text("⚠️  Warning", style="yellow")
+            elif status == "disabled":
+                status_text = Text("⭕ Disabled", style="blue")
+            elif status == "unhealthy":
+                status_text = Text("❌ Unhealthy", style="red")
+            else:
+                status_text = Text("🔍 Unknown", style="dim")
+            
+            details = ""
+            if "metadata" in result:
+                metadata = result["metadata"]
+                if isinstance(metadata, dict):
+                    details = ", ".join([f"{k}: {v}" for k, v in metadata.items() if v is not None])
+            
+            table.add_row(
+                check_name.replace("_", " ").title(),
+                status_text,
+                result.get("message", ""),
+                details
+            )
+        
+        console.print(table)
+        
+        # Overall status summary
+        overall = results.get("overall_status", "unknown")
+        if overall == "healthy":
+            console.print("\n[bold green]🎉 All systems are healthy![/bold green]")
+        elif overall == "warning":
+            console.print("\n[bold yellow]⚠️  Some systems have warnings[/bold yellow]")
+        elif overall == "unhealthy":
+            console.print("\n[bold red]❌ Some systems are unhealthy[/bold red]")
+        else:
+            console.print(f"\n[bold dim]🔍 Overall status: {overall}[/bold dim]")
+            
+    except Exception as e:
+        cli_logger.error(f"Health check failed: {str(e)}")
+        console.print(f"[red]❌ Health check failed: {e}[/red]")
+
+
+async def _run_code_improvement_scenario(params: dict):
+    """Run the code improvement scenario."""
+    try:
+        # Extract parameters
+        goal = params.get("goal")
+        directory = params.get("directory", ".")
+        max_iterations = params.get("max_iterations", 1)
+        dry_run = params.get("dry_run", False)
+        debug = params.get("debug", False)
+        
+        # Set debug logging if requested
+        if debug:
+            from .core.logging import setup_logging, LogLevel
+            setup_logging(LogLevel.DEBUG)
+            cli_logger.info("Debug mode enabled", metadata={"debug": True})
+        
+        with operation_context("code_improvement_command", "cli") as correlation_id:
+            cli_logger.info(f"Starting code improvement", metadata={
+                "goal": goal,
+                "directory": directory,
+                "max_iterations": max_iterations,
+                "dry_run": dry_run,
+                "correlation_id": correlation_id
+            })
+            
+            # Display header
+            console.print(Panel(
+                f"[bold cyan]🔧 Regoose Code Improvement[/bold cyan]\n\n"
+                f"[bold]Goal:[/bold] {goal}\n"
+                f"[bold]Directory:[/bold] {directory}\n"
+                f"[bold]Max Iterations:[/bold] {max_iterations}\n"
+                f"[bold]Mode:[/bold] {'Analysis Only' if dry_run else 'Implementation'}\n" +
+                (f"[bold]Correlation ID:[/bold] {correlation_id}" if debug else ""),
+                title="Code Improvement Session",
+                border_style="cyan"
+            ))
+            
+            # Validate directory
+            from pathlib import Path
+            target_path = Path(directory).resolve()
+            if not target_path.exists():
+                console.print(f"[red]❌ Directory not found: {directory}[/red]")
+                return
+            if not target_path.is_dir():
+                console.print(f"[red]❌ Path is not a directory: {directory}[/red]")
+                return
+            
+            # Get settings and create provider
+            settings = get_settings()
+            
+            # Create LLM provider
+            provider_name = params.get("provider") or settings.default_provider
+            llm_params = extract_llm_params(params)
+            provider = LLMProviderFactory.create_provider(provider_name, settings, **llm_params)
+            
+            # Create tools with secure filesystem
+            tools = create_tools(settings, str(target_path), secure_filesystem=True)
+            
+            # Create orchestrator
+            orchestrator = ActionOrchestrator(provider, tools)
+            
+            # Create scenario
+            scenario = CodeImprovementScenario(orchestrator)
+            
+            # Prepare input data
+            input_data = {
+                "goal": goal,
+                "target_directory": str(target_path),
+                "max_iterations": max_iterations,
+                "dry_run": dry_run,
+                "debug": debug
+            }
+            
+            # Execute scenario
+            console.print("\n[bold yellow]🔍 Starting analysis...[/bold yellow]")
+            
+            if max_iterations > 1:
+                result = await scenario.execute_with_iterations(input_data)
+            else:
+                result = await scenario.execute(input_data)
+            
+            # Display results
+            if result.success:
+                console.print("\n[bold green]✅ Code improvement completed successfully![/bold green]")
+                
+                # Show artifacts generated
+                if result.artifacts:
+                    console.print("\n[bold]📋 Generated Reports:[/bold]")
+                    for artifact_name, content in result.artifacts.items():
+                        console.print(f"  • {artifact_name}")
+                        if debug:
+                            # In debug mode, show first few lines of each artifact
+                            lines = content.split('\n')[:3]
+                            preview = '\n'.join(lines)
+                            console.print(f"    [dim]{preview}...[/dim]")
+                
+                # Show summary from context
+                summary = result.context.get("summary")
+                if summary:
+                    console.print(f"\n[bold]📊 Summary:[/bold]\n{summary}")
+                
+                # Show validation results if available
+                validation_results = result.context.get("validation_results", [])
+                if validation_results:
+                    console.print(f"\n[bold]🔍 Validation:[/bold]")
+                    for vr in validation_results:
+                        status = "✅" if vr.get("syntax_valid", False) else "❌"
+                        console.print(f"  {status} {vr.get('file', 'Unknown file')}")
+                
+            else:
+                console.print(f"\n[bold red]❌ Code improvement failed: {result.error}[/bold red]")
+                
+            cli_logger.info("Code improvement scenario completed", metadata={
+                "success": result.success,
+                "correlation_id": correlation_id
+            })
+            
+    except KeyboardInterrupt:
+        console.print("\n[yellow]⚠️  Code improvement interrupted by user[/yellow]")
+    except Exception as e:
+        cli_logger.error(f"Code improvement scenario failed: {e}", error=str(e))
+        console.print(f"[red]❌ Code improvement failed: {e}[/red]")
 
 
 if __name__ == "__main__":

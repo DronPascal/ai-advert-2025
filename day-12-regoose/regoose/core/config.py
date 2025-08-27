@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     debug: bool = Field(False, env="DEBUG")
     log_level: str = Field("INFO", env="LOG_LEVEL")
     
+    # Provider settings
+    default_provider: str = Field("openai", env="DEFAULT_PROVIDER")
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
