@@ -178,9 +178,16 @@ class MetricsCollector:
             timestamp=time.time(),
             correlation_id=CorrelationContext.get_correlation_id()
         )
-        
+
         self.metrics.append(event)
-        self.logger.info(f"Metric recorded: {name}={value}{unit}", 
+
+        # Automatically track token usage
+        if name == "openai_tokens_used" or name.endswith("_tokens_used"):
+            provider = labels.get("model", "unknown").split("-")[0] if labels and "model" in labels else "unknown"
+            operation = labels.get("operation", "unknown") if labels and "operation" in labels else "unknown"
+            token_tracker.record_token_usage(int(value), provider, operation)
+
+        self.logger.info(f"Metric recorded: {name}={value}{unit}",
                         metadata={"metric": asdict(event)})
     
     def record_duration(self, name: str, duration_ms: float, labels: Optional[Dict[str, str]] = None) -> None:
@@ -206,8 +213,74 @@ class MetricsCollector:
         self.metrics.clear()
 
 
-# Global metrics collector instance
+class TokenTracker:
+    """Tracks token usage across operations."""
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self) -> None:
+        """Reset token tracking."""
+        self.total_tokens = 0
+        self.total_requests = 0
+        self.provider_stats = {}  # provider -> {tokens, requests, avg_tokens_per_request}
+        self.operation_stats = {}  # operation -> {tokens, requests}
+
+    def record_token_usage(self, tokens: int, provider: str = "unknown", operation: str = "unknown") -> None:
+        """Record token usage for a specific operation."""
+        self.total_tokens += tokens
+        self.total_requests += 1
+
+        # Update provider stats
+        if provider not in self.provider_stats:
+            self.provider_stats[provider] = {"tokens": 0, "requests": 0, "avg_tokens_per_request": 0}
+
+        provider_stats = self.provider_stats[provider]
+        provider_stats["tokens"] += tokens
+        provider_stats["requests"] += 1
+        provider_stats["avg_tokens_per_request"] = provider_stats["tokens"] / provider_stats["requests"]
+
+        # Update operation stats
+        if operation not in self.operation_stats:
+            self.operation_stats[operation] = {"tokens": 0, "requests": 0}
+
+        op_stats = self.operation_stats[operation]
+        op_stats["tokens"] += tokens
+        op_stats["requests"] += 1
+
+    def get_summary(self) -> Dict[str, Any]:
+        """Get token usage summary."""
+        summary = {
+            "total_tokens": self.total_tokens,
+            "total_requests": self.total_requests,
+            "avg_tokens_per_request": self.total_tokens / max(self.total_requests, 1),
+            "providers": self.provider_stats,
+            "operations": self.operation_stats
+        }
+        return summary
+
+    def format_summary(self) -> str:
+        """Format token summary for display."""
+        if self.total_tokens == 0:
+            return "📊 Token Usage: No tokens consumed"
+
+        summary = self.get_summary()
+        lines = [f"📊 Token Usage Summary:",
+                f"   • Total Tokens: {summary['total_tokens']:,}",
+                f"   • Total Requests: {summary['total_requests']}",
+                f"   • Avg Tokens/Request: {summary['avg_tokens_per_request']:.1f}"]
+
+        if summary['providers']:
+            lines.append("   • By Provider:")
+            for provider, stats in summary['providers'].items():
+                lines.append(f"     - {provider}: {stats['tokens']:,} tokens ({stats['requests']} requests)")
+
+        return "\n".join(lines)
+
+
+# Global instances
 metrics = MetricsCollector()
+token_tracker = TokenTracker()
 
 
 def timed_operation(operation_name: Optional[str] = None, component: Optional[str] = None):

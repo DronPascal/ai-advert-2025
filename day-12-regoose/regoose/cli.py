@@ -13,7 +13,7 @@ from rich.prompt import Prompt, Confirm
 from rich.markdown import Markdown
 
 from .core.config import get_settings
-from .core.logging import setup_logging, LogLevel, get_logger, CorrelationContext, operation_context
+from .core.logging import setup_logging, LogLevel, get_logger, CorrelationContext, operation_context, token_tracker
 from .core.health import run_health_checks, run_single_health_check
 from .providers.factory import LLMProviderFactory
 from .tools.filesystem_tool import FilesystemTool
@@ -896,6 +896,9 @@ async def _run_code_improvement_scenario(params: dict):
             # Create scenario
             scenario = CodeImprovementScenario(orchestrator)
             
+            # Reset token tracking at start of operation
+            token_tracker.reset()
+
             # Prepare input data
             input_data = {
                 "goal": goal,
@@ -904,7 +907,7 @@ async def _run_code_improvement_scenario(params: dict):
                 "dry_run": dry_run,
                 "debug": debug
             }
-            
+
             # Execute scenario
             console.print("\n[bold yellow]🔍 Starting analysis...[/bold yellow]")
             
@@ -940,9 +943,17 @@ async def _run_code_improvement_scenario(params: dict):
                     for vr in validation_results:
                         status = "✅" if vr.get("syntax_valid", False) else "❌"
                         console.print(f"  {status} {vr.get('file', 'Unknown file')}")
-                
+
+                # Show token usage summary
+                token_summary = token_tracker.format_summary()
+                console.print(f"\n{token_summary}")
+
             else:
                 console.print(f"\n[bold red]❌ Code improvement failed: {result.error}[/bold red]")
+                # Show token usage summary even on failure
+                token_summary = token_tracker.format_summary()
+                if token_tracker.total_tokens > 0:
+                    console.print(f"\n{token_summary}")
                 
             cli_logger.info("Code improvement scenario completed", metadata={
                 "success": result.success,
