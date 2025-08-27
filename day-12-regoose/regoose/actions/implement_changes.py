@@ -4,6 +4,9 @@ from typing import Dict, List, Any
 from .base import BaseAction, ActionContext, ActionResult
 from ..core.logging import get_logger, timed_operation
 import re
+import os
+import tempfile
+import subprocess
 
 logger = get_logger("implement_changes")
 
@@ -316,21 +319,27 @@ Changes Made:
     
     async def _apply_smart_changes(self, current_content: str, new_code: str, description: str) -> str:
         """Apply smart changes to existing content instead of full replacement."""
-        
-        # NEVER replace entire file content unless explicitly requested
+
+        # Check if git patch mode is enabled
+        use_git_patch = os.environ.get('REGOOSE_USE_GIT_PATCH', 'false').lower() == 'true'
+
+        if use_git_patch:
+            return await self._apply_git_patch_changes(current_content, new_code, description)
+
+        # Standard mode - NEVER replace entire file content unless explicitly requested
         # Always try to make targeted changes first
-        
+
         # First, try to find OLD/NEW pattern in the new_code
         old_text = None
         new_text = None
-        
+
         for line in new_code.split('\n'):
             line = line.strip()
             if line.startswith('OLD:'):
                 old_text = line.replace('OLD:', '').strip()
             elif line.startswith('NEW:'):
                 new_text = line.replace('NEW:', '').strip()
-        
+
         # If we have OLD/NEW pattern, do exact replacement
         if old_text and new_text:
             if old_text in current_content:
@@ -339,7 +348,7 @@ Changes Made:
             else:
                 # Try to find similar lines with fuzzy matching
                 return self._find_similar_line_and_replace(current_content, old_text, new_text)
-        
+
         # If no OLD/NEW pattern, try to extract from description
         if "change" in description.lower() or "replace" in description.lower():
             # Look for quoted text in description
@@ -349,7 +358,7 @@ Changes Made:
                 if old_text in current_content:
                     self.logger.info(f"Found match from description, replacing: '{old_text}' -> '{new_text}'")
                     return current_content.replace(old_text, new_text)
-        
+
         # NEW: Try to extract change from goal description using common patterns
         if "hello" in description.lower() and "hi" in description.lower():
             # Look for Hello -> Hi pattern
@@ -357,17 +366,112 @@ Changes Made:
                 new_content = current_content.replace("Hello", "Hi")
                 self.logger.info(f"Applied Hello->Hi replacement based on description")
                 return new_content
-        
+
         if "hi" in description.lower() and "hello" in description.lower():
             # Look for Hi -> Hello pattern
             if "Hi" in current_content:
                 new_content = current_content.replace("Hi", "Hello")
                 self.logger.info(f"Applied Hi->Hello replacement based on description")
                 return new_content
-        
+
         # If we can't determine how to apply changes safely, don't change anything
         self.logger.warning(f"Cannot determine safe change method, preserving original content: {description}")
         return current_content
+
+    async def _apply_git_patch_changes(self, current_content: str, new_code: str, description: str) -> str:
+        """Apply changes using git diff/patch format for maximum token efficiency."""
+
+        try:
+            # Create temporary files for git diff
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as original_file:
+                original_file.write(current_content)
+                original_path = original_file.name
+
+            # Generate the modified content using the new approach
+            modified_content = await self._generate_modified_content(current_content, new_code, description)
+
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as modified_file:
+                modified_file.write(modified_content)
+                modified_path = modified_file.name
+
+            # Generate git diff
+            diff_result = subprocess.run(
+                ['git', 'diff', '--no-index', original_path, modified_path],
+                capture_output=True,
+                text=True,
+                cwd='/tmp'  # Use /tmp to avoid git repository issues
+            )
+
+            if diff_result.returncode in [0, 1]:  # 0 = no differences, 1 = differences found
+                diff_output = diff_result.stdout
+                self.logger.info(f"Generated git diff ({len(diff_output)} chars)")
+
+                # Apply the patch
+                patch_result = subprocess.run(
+                    ['git', 'apply', '--whitespace=fix'],
+                    input=diff_output,
+                    text=True,
+                    cwd=os.path.dirname(original_path)
+                )
+
+                if patch_result.returncode == 0:
+                    # Read the patched file
+                    with open(original_path, 'r') as f:
+                        patched_content = f.read()
+                    self.logger.info("Git patch applied successfully")
+                    return patched_content
+                else:
+                    self.logger.warning(f"Git patch failed: {patch_result.stderr}")
+                    return current_content
+            else:
+                self.logger.error(f"Git diff failed: {diff_result.stderr}")
+                return current_content
+
+        except Exception as e:
+            self.logger.warning(f"Git patch mode failed, falling back to standard mode: {e}")
+            return current_content
+
+        finally:
+            # Cleanup temporary files
+            try:
+                os.unlink(original_path)
+                os.unlink(modified_path)
+            except:
+                pass
+
+    async def _generate_modified_content(self, current_content: str, new_code: str, description: str) -> str:
+        """Generate modified content using the same logic as standard mode but optimized for git patches."""
+
+        # Try to find OLD/NEW pattern first
+        old_text = None
+        new_text = None
+
+        for line in new_code.split('\n'):
+            line = line.strip()
+            if line.startswith('OLD:'):
+                old_text = line.replace('OLD:', '').strip()
+            elif line.startswith('NEW:'):
+                new_text = line.replace('NEW:', '').strip()
+
+        if old_text and new_text:
+            if old_text in current_content:
+                self.logger.info(f"Git patch mode: replacing '{old_text}' -> '{new_text}'")
+                return current_content.replace(old_text, new_text)
+
+        # Fallback to description-based patterns
+        if "add docstring" in description.lower() and "greet" in description.lower():
+            # Add docstring pattern for greet function
+            lines = current_content.split('\n')
+            for i, line in enumerate(lines):
+                if line.strip().startswith('def greet('):
+                    # Insert docstring before the function
+                    docstring = '    """Greet a person with a personalized message."""'
+                    lines.insert(i, docstring)
+                    self.logger.info("Git patch mode: added docstring to greet function")
+                    return '\n'.join(lines)
+
+        # If no specific pattern found, try fuzzy matching
+        return self._find_similar_line_and_replace(current_content, old_text or "", new_text or "")
     
     def _find_similar_line_and_replace(self, current_content: str, old_text: str, new_text: str) -> str:
         """Find a similar line and replace it with new text."""

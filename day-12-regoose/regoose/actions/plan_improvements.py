@@ -58,12 +58,16 @@ class PlanImprovementsAction(BaseAction):
                              ['.py', '.js', '.ts', '.java', '.cpp', '.h']][:5]  # Limit to 5 files
                 relevant_files.update(code_files)
             
-            # Read file contents
-            for file_path in list(relevant_files)[:10]:  # Limit to 10 files
+            # Read file contents with size limit (max 2000 chars per file for token efficiency)
+            for file_path in list(relevant_files)[:5]:  # Reduced to 5 files max
                 result = await filesystem_tool.execute("read_file", path=file_path)
                 if result.success:
-                    file_contents[file_path] = result.output
-                    logger.debug(f"Read file for planning: {file_path}")
+                    content = result.output
+                    # Truncate large files to save tokens
+                    if len(content) > 2000:
+                        content = content[:2000] + "\n...[TRUNCATED FOR TOKEN EFFICIENCY]..."
+                    file_contents[file_path] = content
+                    logger.debug(f"Read file for planning: {file_path} ({len(content)} chars)")
                 else:
                     logger.warning(f"Could not read file {file_path}: {result.error}")
             
@@ -127,33 +131,24 @@ class PlanImprovementsAction(BaseAction):
         return f"""MINIMAL changes for: {goal}
 
 ANALYSIS:
-{analysis[:500] + '...' if len(analysis) > 500 else analysis}
+{analysis[:300] + '...' if len(analysis) > 300 else analysis}
 
 RECOMMENDATIONS:
 {recs_text}
 
+FILES:
 {files_summary}
 
 INSTRUCTIONS:
-- Make MINIMAL changes only
-- Max 1-2 steps for text replacements
+- MAX 1-2 changes only
 - Use exact OLD:/NEW: format
-- No extra features or refactoring
+- Target specific lines only
 
 FORMAT:
 ## Plan
-
 ### Step 1: [Change]
 - **File:** path
-- **Type:** modification
-- **Code:**
-```
-OLD: exact text
-NEW: replacement
-```
-
-## Validation
-[How to verify]"""
+- **Code:** OLD: text NEW: replacement"""
     
     def _parse_planning_response(self, response: str, recommendations: List[Dict]) -> List[Dict]:
         """Parse planning response into structured implementation steps."""

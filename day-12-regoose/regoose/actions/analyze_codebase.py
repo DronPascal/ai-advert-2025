@@ -94,15 +94,14 @@ class AnalyzeCodebaseAction(BaseAction):
         languages = ', '.join(analysis_data.get('languages', {}).keys()) or 'unknown'
         summary = analysis_data.get('summary', 'No summary available')
 
-        # Truncate tree output to essential information only (max 500 chars)
-        tree_preview = tree_output[:500] + '...' if len(tree_output) > 500 else tree_output
+        # Truncate tree output to essential information only (max 300 chars)
+        tree_preview = tree_output[:300] + '...' if len(tree_output) > 300 else tree_output
 
-        return f"""Analyze codebase for: {goal}
+        return f"""Analyze for: {goal}
 
 OVERVIEW:
 - Files: {total_files} total, {code_files} code
 - Languages: {languages}
-- Summary: {summary}
 
 STRUCTURE:
 {tree_preview}
@@ -111,20 +110,13 @@ REQUIREMENTS:
 1. Focus on: {goal}
 2. Identify specific files needing changes
 3. Prioritize actionable improvements
-4. Consider quality, maintainability, performance, security
 
 FORMAT:
 ## Summary
-[2-3 sentences]
-
-## Issues
-[Bullet points]
+[2 sentences]
 
 ## Recommendations
-[Priority: File - Change - Why]
-
-## Plan
-[Steps]"""
+[Priority: File - Change - Why]"""
     
     def _parse_analysis_response(self, response: str, analysis_data: Dict) -> tuple[str, List[Dict]]:
         """Parse LLM response to extract analysis and recommendations."""

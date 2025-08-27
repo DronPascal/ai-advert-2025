@@ -185,7 +185,14 @@ class MetricsCollector:
         if name == "openai_tokens_used" or name.endswith("_tokens_used"):
             provider = labels.get("model", "unknown").split("-")[0] if labels and "model" in labels else "unknown"
             operation = labels.get("operation", "unknown") if labels and "operation" in labels else "unknown"
-            token_tracker.record_token_usage(int(value), provider, operation)
+            # For backward compatibility, use total tokens if input/output not specified
+            input_tokens = labels.get("input_tokens", 0) if labels else 0
+            output_tokens = labels.get("output_tokens", 0) if labels else 0
+            if input_tokens == 0 and output_tokens == 0:
+                # Legacy mode - assume all tokens are output (completion tokens)
+                input_tokens = 0
+                output_tokens = int(value)
+            token_tracker.record_token_usage(int(value), input_tokens, output_tokens, provider, operation)
 
         self.logger.info(f"Metric recorded: {name}={value}{unit}",
                         metadata={"metric": asdict(event)})
@@ -222,36 +229,51 @@ class TokenTracker:
     def reset(self) -> None:
         """Reset token tracking."""
         self.total_tokens = 0
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
         self.total_requests = 0
-        self.provider_stats = {}  # provider -> {tokens, requests, avg_tokens_per_request}
-        self.operation_stats = {}  # operation -> {tokens, requests}
+        self.provider_stats = {}  # provider -> {tokens, input_tokens, output_tokens, requests, avg_tokens_per_request}
+        self.operation_stats = {}  # operation -> {tokens, input_tokens, output_tokens, requests}
 
-    def record_token_usage(self, tokens: int, provider: str = "unknown", operation: str = "unknown") -> None:
+    def record_token_usage(self, tokens: int, input_tokens: int = 0, output_tokens: int = 0, provider: str = "unknown", operation: str = "unknown") -> None:
         """Record token usage for a specific operation."""
         self.total_tokens += tokens
+        self.total_input_tokens += input_tokens
+        self.total_output_tokens += output_tokens
         self.total_requests += 1
 
         # Update provider stats
         if provider not in self.provider_stats:
-            self.provider_stats[provider] = {"tokens": 0, "requests": 0, "avg_tokens_per_request": 0}
+            self.provider_stats[provider] = {
+                "tokens": 0, "input_tokens": 0, "output_tokens": 0,
+                "requests": 0, "avg_tokens_per_request": 0
+            }
 
         provider_stats = self.provider_stats[provider]
         provider_stats["tokens"] += tokens
+        provider_stats["input_tokens"] += input_tokens
+        provider_stats["output_tokens"] += output_tokens
         provider_stats["requests"] += 1
         provider_stats["avg_tokens_per_request"] = provider_stats["tokens"] / provider_stats["requests"]
 
         # Update operation stats
         if operation not in self.operation_stats:
-            self.operation_stats[operation] = {"tokens": 0, "requests": 0}
+            self.operation_stats[operation] = {
+                "tokens": 0, "input_tokens": 0, "output_tokens": 0, "requests": 0
+            }
 
         op_stats = self.operation_stats[operation]
         op_stats["tokens"] += tokens
+        op_stats["input_tokens"] += input_tokens
+        op_stats["output_tokens"] += output_tokens
         op_stats["requests"] += 1
 
     def get_summary(self) -> Dict[str, Any]:
         """Get token usage summary."""
         summary = {
             "total_tokens": self.total_tokens,
+            "total_input_tokens": self.total_input_tokens,
+            "total_output_tokens": self.total_output_tokens,
             "total_requests": self.total_requests,
             "avg_tokens_per_request": self.total_tokens / max(self.total_requests, 1),
             "providers": self.provider_stats,
@@ -267,13 +289,15 @@ class TokenTracker:
         summary = self.get_summary()
         lines = [f"📊 Token Usage Summary:",
                 f"   • Total Tokens: {summary['total_tokens']:,}",
+                f"     - Input Tokens: {summary['total_input_tokens']:,}",
+                f"     - Output Tokens: {summary['total_output_tokens']:,}",
                 f"   • Total Requests: {summary['total_requests']}",
                 f"   • Avg Tokens/Request: {summary['avg_tokens_per_request']:.1f}"]
 
         if summary['providers']:
             lines.append("   • By Provider:")
             for provider, stats in summary['providers'].items():
-                lines.append(f"     - {provider}: {stats['tokens']:,} tokens ({stats['requests']} requests)")
+                lines.append(f"     - {provider}: {stats['tokens']:,} tokens ({stats['input_tokens']:,} input, {stats['output_tokens']:,} output, {stats['requests']} requests)")
 
         return "\n".join(lines)
 

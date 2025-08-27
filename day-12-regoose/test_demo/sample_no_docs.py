@@ -1,0 +1,10 @@
+def calculate_sum(a, b):
+    return a + b
+
+def greet(name):
+    """Return a greeting message for the given name."""
+    return f"Hello, {name}!"
+
+if __name__ == "__main__":
+    print(calculate_sum(5, 3))
+    print(greet("World"))
