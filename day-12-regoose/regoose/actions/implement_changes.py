@@ -192,17 +192,15 @@ class ImplementChangesAction(BaseAction):
             if backup_result.success:
                 step_result["backup_created"] = backup_result.metadata.get("backup_path")
             
-            # Use LLM to generate the improved code
-            improvement_prompt = f"""You are modifying code to implement this improvement:
+            # Use LLM to generate the improved code (optimized prompt)
+            improvement_prompt = f"""Modify code for: {description}
 
-DESCRIPTION: {description}
-
-CURRENT CODE:
+CURRENT:
 ```
-{current_content}
+{current_content[:1500] + '...' if len(current_content) > 1500 else current_content}
 ```
 
-Provide the complete improved code for the file. Only output the code, no explanations."""
+OUTPUT: Complete improved code only."""
             
             messages = [
                 {"role": "system", "content": improvement_prompt}

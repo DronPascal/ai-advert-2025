@@ -100,73 +100,60 @@ class PlanImprovementsAction(BaseAction):
             logger.error(f"Improvement planning failed: {e}", error=str(e))
             return ActionResult.error_result(f"Planning failed: {str(e)}")
     
-    def _build_planning_prompt(self, goal: str, recommendations: List[Dict], 
+    def _build_planning_prompt(self, goal: str, recommendations: List[Dict],
                              analysis: str, file_contents: Dict[str, str]) -> str:
-        """Build planning prompt for LLM."""
-        
+        """Build optimized planning prompt for LLM with maximum token efficiency."""
+
+        # Create concise file summary (max 1000 chars total)
         files_summary = ""
         if file_contents:
-            files_summary = "CURRENT CODE FILES:\n"
+            files_summary = "FILES:\n"
+            total_chars = 0
             for file_path, content in file_contents.items():
-                # Truncate very long files
-                truncated_content = content[:2000] + "..." if len(content) > 2000 else content
-                files_summary += f"\n--- {file_path} ---\n{truncated_content}\n"
-        
-        recommendations_text = ""
-        for i, rec in enumerate(recommendations, 1):
-            recommendations_text += f"{i}. {rec.get('title', 'Unknown')}: {rec.get('description', '')}\n"
-        
-        return f"""You are an expert software engineer. Your task is to make MINIMAL changes to achieve the goal.
+                # Limit each file to 300 chars
+                truncated = content[:300] + "..." if len(content) > 300 else content
+                file_entry = f"--- {file_path} ---\n{truncated}\n"
+                if total_chars + len(file_entry) < 1000:
+                    files_summary += file_entry
+                    total_chars += len(file_entry)
+                else:
+                    break
 
-GOAL: {goal}
+        # Create concise recommendations list
+        recs_text = ""
+        for i, rec in enumerate(recommendations[:5], 1):  # Limit to top 5
+            recs_text += f"{i}. {rec.get('title', 'Unknown')}\n"
 
-PREVIOUS ANALYSIS:
-{analysis}
+        return f"""MINIMAL changes for: {goal}
 
-RECOMMENDATIONS TO IMPLEMENT:
-{recommendations_text}
+ANALYSIS:
+{analysis[:500] + '...' if len(analysis) > 500 else analysis}
+
+RECOMMENDATIONS:
+{recs_text}
 
 {files_summary}
 
-CRITICAL INSTRUCTIONS:
-1. **Do EXACTLY what is asked** - no extra features, no refactoring, no documentation
-2. **Maximum 1-2 steps** for simple text replacements
-3. **Be PRECISE** - find exact text and replace it exactly
-4. **No file creation** unless explicitly requested
-5. **No structural changes** unless necessary
+INSTRUCTIONS:
+- Make MINIMAL changes only
+- Max 1-2 steps for text replacements
+- Use exact OLD:/NEW: format
+- No extra features or refactoring
 
-FOR TEXT REPLACEMENTS:
-- Find the EXACT line containing the text to change
-- Replace ONLY that specific text
-- Keep everything else unchanged
-- Use OLD: and NEW: format for exact replacements
+FORMAT:
+## Plan
 
-EXAMPLE FOR "Change 'Hello' to 'Hi'":
-```python
-OLD: return f"Hello, {{name}}!"
-NEW: return f"Hi, {{name}}!"
+### Step 1: [Change]
+- **File:** path
+- **Type:** modification
+- **Code:**
+```
+OLD: exact text
+NEW: replacement
 ```
 
-RESPONSE FORMAT:
-## Implementation Plan
-
-### Step 1: [Main Change]
-- **File:** filename.ext
-- **Change Type:** modification
-- **Description:** Exact change needed
-- **Code:** 
-```language
-OLD: exact text to find
-NEW: exact text to replace with
-```
-
-### Step 2: [Additional Change - ONLY if absolutely necessary]
-[Same format]
-
-## Validation Steps
-[How to verify the main goal is achieved]
-
-Remember: SIMPLE and PRECISE changes only. Do not over-engineer."""
+## Validation
+[How to verify]"""
     
     def _parse_planning_response(self, response: str, recommendations: List[Dict]) -> List[Dict]:
         """Parse planning response into structured implementation steps."""
